@@ -1,9 +1,13 @@
 package com.aureusapps.android.extensions
 
+import android.animation.ValueAnimator
 import android.view.View
+import android.view.animation.Interpolator
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
 import androidx.lifecycle.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 fun View.dismissKeyboard() {
     context.getInputMethodManager().hideSoftInputFromWindow(
@@ -66,4 +70,24 @@ fun View.setHeight(height: Int) {
     val params = layoutParams
     params.height = height
     layoutParams = params
+}
+
+fun View.animate(
+    from: Int,
+    to: Int,
+    duration: Long,
+    interpolator: Interpolator,
+    callback: (Int) -> Unit
+): Job {
+    return lifecycleScope.launch {
+        val animator = ValueAnimator.ofInt(from, to)
+            .apply {
+                this.duration = duration
+                this.interpolator = interpolator
+                this.addUpdateListener {
+                    callback(animatedValue as Int)
+                }
+            }
+        animator.start()
+    }
 }
