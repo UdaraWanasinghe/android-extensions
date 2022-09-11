@@ -1,5 +1,6 @@
 package com.aureusapps.android.extensions
 
+import android.animation.TimeInterpolator
 import android.animation.ValueAnimator
 import android.view.View
 import android.view.animation.Interpolator
@@ -76,7 +77,7 @@ fun View.animate(
     from: Int,
     to: Int,
     duration: Long,
-    interpolator: Interpolator,
+    interpolator: TimeInterpolator,
     callback: (Int) -> Unit
 ): Job {
     return lifecycleScope.launch {
