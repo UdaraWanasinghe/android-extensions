@@ -3,26 +3,34 @@
 
 This is a collection of useful extensions for Android development.
 
+
+
 ## Building
 This project uses Gradle as its build system. To build this project, run `gradlew publishToMavenLocal` command on the root of the project.
 
+
+
 ## Using
-    To use this library in your project, add the `mavenLocal` repository to your project's `settings.gradle` file.
 
-    ```groovy
-    dependencyResolutionManagement {
-        repositories {
-            mavenLocal()
-        }
-    }
-    ```
-    Then add the following dependency to your project's `build.gradle` file.
+To use this library in your project, add the `mavenLocal` repository to your project's `settings.gradle` file.
 
-    ```groovy
-    dependencies {
-        implementation 'com.aureusapps.android:extensions:1.0.0'
+```groovy
+dependencyResolutionManagement {
+    repositories {
+        mavenLocal()
     }
-    ```
+}
+```
+
+Then add the following dependency to your project's `build.gradle` file.
+
+```groovy
+dependencies {
+    implementation 'com.aureusapps.android:extensions:1.0.0'
+}
+```
+
+
 
 ## Appreciate my work!
 
