@@ -1,14 +1,9 @@
 package com.aureusapps.android.extensions
 
-import android.animation.TimeInterpolator
-import android.animation.ValueAnimator
 import android.view.View
-import android.view.animation.Interpolator
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
 import androidx.lifecycle.*
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 
 fun View.dismissKeyboard() {
     context.getInputMethodManager().hideSoftInputFromWindow(
