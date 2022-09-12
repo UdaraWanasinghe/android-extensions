@@ -72,23 +72,3 @@ fun View.setHeight(height: Int) {
     params.height = height
     layoutParams = params
 }
-
-fun View.animate(
-    from: Int,
-    to: Int,
-    duration: Long,
-    interpolator: TimeInterpolator,
-    callback: (Int) -> Unit
-): Job {
-    return lifecycleScope.launch {
-        val animator = ValueAnimator.ofInt(from, to)
-            .apply {
-                this.duration = duration
-                this.interpolator = interpolator
-                this.addUpdateListener {
-                    callback(animatedValue as Int)
-                }
-            }
-        animator.start()
-    }
-}
