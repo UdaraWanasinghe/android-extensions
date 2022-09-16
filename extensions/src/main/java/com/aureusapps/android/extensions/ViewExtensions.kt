@@ -1,6 +1,7 @@
 package com.aureusapps.android.extensions
 
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
 import androidx.lifecycle.*
@@ -66,4 +67,20 @@ fun View.setHeight(height: Int) {
     val params = layoutParams
     params.height = height
     layoutParams = params
+}
+
+fun View.getVerticalMargin(): Int {
+    val lp = layoutParams
+    if (lp is ViewGroup.MarginLayoutParams) {
+        return lp.topMargin + lp.bottomMargin
+    }
+    return 0
+}
+
+fun View.getHorizontalMargin(): Int {
+    val lp = layoutParams
+    if (lp is ViewGroup.MarginLayoutParams) {
+        return lp.leftMargin + lp.rightMargin
+    }
+    return 0
 }
