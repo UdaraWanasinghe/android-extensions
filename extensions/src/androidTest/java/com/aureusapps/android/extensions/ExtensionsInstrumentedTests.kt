@@ -7,6 +7,7 @@ import org.junit.runners.Suite
 @Suite.SuiteClasses(
     UrlExtensionsInstrumentedTest::class,
     ContextExtensionsInstrumentedTest::class,
-    RoomDatabaseExtensionsInstrumentedTest::class
+    RoomDatabaseExtensionsInstrumentedTest::class,
+    InputStreamExtensionsInstrumentedTest::class
 )
 class ExtensionsInstrumentedTests
