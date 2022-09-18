@@ -45,9 +45,7 @@ suspend fun URL.downloadFile(context: Context, dstUri: Uri) {
         if (response.code == 200) {
             val body = response.body ?: throw Exception(ERROR_EMPTY_RESPONSE)
             val inputStream = body.byteStream()
-            if (!inputStream.writeTo(dstUri, context)) {
-                throw Exception(ERROR_FONT_SAVE_FAILURE)
-            }
+            inputStream.writeTo(dstUri, context)
         } else {
             throw IOException(ERROR_NETWORK_REQUEST_FAILED)
         }
