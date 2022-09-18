@@ -13,7 +13,6 @@ import kotlin.coroutines.suspendCoroutine
 
 private const val ERROR_EMPTY_RESPONSE = "Received empty response."
 private const val ERROR_NETWORK_REQUEST_FAILED = "Network request failed."
-private const val ERROR_FONT_SAVE_FAILURE = "Failed to save font file."
 
 private val client by lazy {
     OkHttpClient()
@@ -39,7 +38,7 @@ private suspend fun URL.sendNetworkRequest(): Response {
     }
 }
 
-suspend fun URL.downloadFile(context: Context, dstUri: Uri) {
+suspend fun URL.readFile(context: Context, dstUri: Uri) {
     withContext(Dispatchers.IO) {
         val response = sendNetworkRequest()
         if (response.code == 200) {
@@ -53,7 +52,7 @@ suspend fun URL.downloadFile(context: Context, dstUri: Uri) {
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun URL.downloadString(): String {
+suspend fun URL.readString(): String {
     return with(Dispatchers.IO) {
         val response = sendNetworkRequest()
         if (response.code == 200) {
@@ -65,13 +64,13 @@ suspend fun URL.downloadString(): String {
     }
 }
 
-suspend fun URL.downloadJsonArray(): JSONArray {
-    val response = downloadString()
+suspend fun URL.readJsonArray(): JSONArray {
+    val response = readString()
     return JSONArray(response)
 }
 
-suspend fun URL.downloadJsonObject(): JSONObject {
-    val response = downloadString()
+suspend fun URL.readJsonObject(): JSONObject {
+    val response = readString()
     return JSONObject(response)
 }
 

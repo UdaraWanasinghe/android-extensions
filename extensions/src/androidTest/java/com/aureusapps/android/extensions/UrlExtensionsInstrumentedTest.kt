@@ -47,7 +47,7 @@ class UrlExtensionsInstrumentedTest {
         }
         val dstUri = Uri.fromFile(dstFile)
         runBlocking {
-            srcUrl.downloadFile(context, dstUri)
+            srcUrl.readFile(context, dstUri)
         }
 
         // read file
