@@ -7,10 +7,12 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
+import org.json.JSONArray
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
+import java.io.FileReader
 import java.net.URL
 
 @RunWith(AndroidJUnit4::class)
@@ -38,7 +40,7 @@ class UrlExtensionsInstrumentedTest {
             permissionCheckResult
         )
 
-        val srcUrl = URL("https://api.worldbank.org/v2/country?format=json")
+        val srcUrl = URL("https://api.worldbank.org/v2/country/lk?format=json")
         val dstFile = File(context.cacheDir, "test.json")
         if (dstFile.exists()) {
             dstFile.delete()
@@ -47,7 +49,13 @@ class UrlExtensionsInstrumentedTest {
         runBlocking {
             srcUrl.downloadFile(context, dstUri)
         }
-        Assert.assertTrue(dstFile.exists())
+
+        // read file
+        val reader = FileReader(dstFile)
+        val json = JSONArray(reader.readText())
+        reader.close()
+        val name = json.getJSONArray(1).getJSONObject(0).getString("name")
+        Assert.assertEquals("Sri Lanka", name)
     }
 
 }
