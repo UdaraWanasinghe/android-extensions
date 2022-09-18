@@ -18,6 +18,9 @@ class InputStreamExtensionsInstrumentedTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val inputStream = javaClass.classLoader?.getResourceAsStream("test.txt")
         val file = File(context.cacheDir, "test.txt")
+        if (file.exists()) {
+            file.delete()
+        }
         val uri = Uri.fromFile(file)
         inputStream?.writeTo(uri, context)
         Assert.assertTrue(file.exists())
