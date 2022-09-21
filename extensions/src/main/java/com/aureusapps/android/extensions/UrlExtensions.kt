@@ -14,11 +14,11 @@ import kotlin.coroutines.suspendCoroutine
 private const val ERROR_EMPTY_RESPONSE = "Received empty response."
 private const val ERROR_NETWORK_REQUEST_FAILED = "Network request failed."
 
-private val client by lazy {
+private val httpClient by lazy {
     OkHttpClient()
 }
 
-private suspend fun URL.sendNetworkRequest(): Response {
+private suspend fun URL.sendNetworkRequest(client: OkHttpClient = httpClient): Response {
     val request = Request.Builder().url(this).build()
     return withContext(Dispatchers.IO) {
         suspendCoroutine {
@@ -38,9 +38,9 @@ private suspend fun URL.sendNetworkRequest(): Response {
     }
 }
 
-suspend fun URL.readFile(context: Context, dstUri: Uri) {
+suspend fun URL.readFile(context: Context, dstUri: Uri, client: OkHttpClient = httpClient) {
     withContext(Dispatchers.IO) {
-        val response = sendNetworkRequest()
+        val response = sendNetworkRequest(client)
         if (response.code == 200) {
             val body = response.body ?: throw Exception(ERROR_EMPTY_RESPONSE)
             val inputStream = body.byteStream()
@@ -52,9 +52,9 @@ suspend fun URL.readFile(context: Context, dstUri: Uri) {
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun URL.readString(): String {
+suspend fun URL.readString(client: OkHttpClient = httpClient): String {
     return with(Dispatchers.IO) {
-        val response = sendNetworkRequest()
+        val response = sendNetworkRequest(client)
         if (response.code == 200) {
             val body = response.body ?: throw Exception(ERROR_EMPTY_RESPONSE)
             body.string()
