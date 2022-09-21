@@ -3,13 +3,13 @@ package com.aureusapps.android.extensions
 import android.content.Context
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import okhttp3.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URL
-import kotlin.coroutines.suspendCoroutine
 
 private const val ERROR_EMPTY_RESPONSE = "Received empty response."
 private const val ERROR_NETWORK_REQUEST_FAILED = "Network request failed."
@@ -21,19 +21,20 @@ private val httpClient by lazy {
 private suspend fun URL.sendNetworkRequest(client: OkHttpClient = httpClient): Response {
     val request = Request.Builder().url(this).build()
     return withContext(Dispatchers.IO) {
-        suspendCoroutine {
-            client.newCall(request)
-                .enqueue(
-                    object : Callback {
-                        override fun onFailure(call: Call, e: IOException) {
-                            it.resumeWith(Result.failure(e))
-                        }
-
-                        override fun onResponse(call: Call, response: Response) {
-                            it.resumeWith(Result.success(response))
-                        }
+        suspendCancellableCoroutine {
+            val call = client.newCall(request)
+            call.enqueue(
+                object : Callback {
+                    override fun onFailure(call: Call, e: IOException) {
+                        it.resumeWith(Result.failure(e))
                     }
-                )
+
+                    override fun onResponse(call: Call, response: Response) {
+                        it.resumeWith(Result.success(response))
+                    }
+                }
+            )
+            it.invokeOnCancellation { call.cancel() }
         }
     }
 }
