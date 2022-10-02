@@ -27,10 +27,12 @@ fun Context.getInputMethodManager(): InputMethodManager {
     return getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 }
 
-fun Context.wrapTheme(@AttrRes attr: Int): Context {
+fun Context.wrapTheme(@AttrRes attr: Int, @StyleRes defStyleRes: Int = 0): Context {
     val themeValue = TypedValue()
     return if (theme.resolveAttribute(attr, themeValue, false)) {
         ContextThemeWrapper(this, themeValue.data)
+    } else if (defStyleRes != 0) {
+        ContextThemeWrapper(this, defStyleRes)
     } else {
         this
     }
@@ -41,7 +43,12 @@ fun Context.obtainMaterialThemeOverlayId(
     @AttrRes defStyleAttr: Int = 0,
     @StyleRes defStyleRes: Int = 0
 ): Int {
-    val a = obtainStyledAttributes(attrs, intArrayOf(R.attr.materialThemeOverlay), defStyleAttr, defStyleRes)
+    val a = obtainStyledAttributes(
+        attrs,
+        intArrayOf(R.attr.materialThemeOverlay),
+        defStyleAttr,
+        defStyleRes
+    )
     val materialThemeOverlayId = a.getResourceId(0, 0)
     a.recycle()
     return materialThemeOverlayId
