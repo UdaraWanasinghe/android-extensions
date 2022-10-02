@@ -39,15 +39,10 @@ fun Context.wrapTheme(@AttrRes attr: Int, @StyleRes defStyleRes: Int = 0): Conte
 }
 
 fun Context.obtainMaterialThemeOverlayId(
-    attrs: AttributeSet,
-    @AttrRes defStyleAttr: Int = 0,
-    @StyleRes defStyleRes: Int = 0
+    attrs: AttributeSet, @AttrRes defStyleAttr: Int = 0, @StyleRes defStyleRes: Int = 0
 ): Int {
     val a = obtainStyledAttributes(
-        attrs,
-        intArrayOf(R.attr.materialThemeOverlay),
-        defStyleAttr,
-        defStyleRes
+        attrs, intArrayOf(R.attr.materialThemeOverlay), defStyleAttr, defStyleRes
     )
     val materialThemeOverlayId = a.getResourceId(0, 0)
     a.recycle()
@@ -65,4 +60,13 @@ fun Context.useDefaultMaterialTheme(
         return android.view.ContextThemeWrapper(this, themeResId)
     }
     return this
+}
+
+/**
+ * Apply the given style to the current context.
+ *
+ * @param styleResId The style resource id to apply.
+ */
+fun Context.applyStyle(@StyleRes styleResId: Int): Context {
+    return ContextThemeWrapper(this, styleResId)
 }
