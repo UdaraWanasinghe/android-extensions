@@ -13,6 +13,7 @@ fun View.dismissKeyboard() {
 }
 
 fun View.showKeyboard() {
+    requestFocus()
     context.getInputMethodManager().showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
 }
 
