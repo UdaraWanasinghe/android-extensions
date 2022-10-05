@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <attr name="paddingNormal" format="dimension" />
-    <attr name="testSubStyleAttr" format="reference" />
-</resources>
