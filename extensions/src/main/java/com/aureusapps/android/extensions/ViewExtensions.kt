@@ -1,5 +1,6 @@
 package com.aureusapps.android.extensions
 
+import android.content.res.Resources
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -70,18 +71,59 @@ fun View.setHeight(height: Int) {
     layoutParams = params
 }
 
-fun View.getVerticalMargin(): Int {
-    val lp = layoutParams
-    if (lp is ViewGroup.MarginLayoutParams) {
-        return lp.topMargin + lp.bottomMargin
+val View.verticalMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.topMargin + lp.bottomMargin
+        }
+        return 0
     }
-    return 0
-}
 
-fun View.getHorizontalMargin(): Int {
-    val lp = layoutParams
-    if (lp is ViewGroup.MarginLayoutParams) {
-        return lp.leftMargin + lp.rightMargin
+val View.horizontalMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.leftMargin + lp.rightMargin
+        }
+        return 0
     }
-    return 0
-}
+
+val View.leftMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.leftMargin
+        }
+        return 0
+    }
+
+val View.rightMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.rightMargin
+        }
+        return 0
+    }
+
+val View.topMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.topMargin
+        }
+        return 0
+    }
+
+val View.bottomMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is ViewGroup.MarginLayoutParams) {
+            return lp.bottomMargin
+        }
+        return 0
+    }
+
+val View.theme: Resources.Theme
+    get() = context.theme
