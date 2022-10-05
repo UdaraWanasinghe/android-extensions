@@ -1,6 +1,7 @@
 package com.aureusapps.android.extensions
 
 import android.content.res.Resources
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
@@ -127,3 +128,6 @@ val View.bottomMargin: Int
 
 val View.theme: Resources.Theme
     get() = context.theme
+
+val View.layoutInflater: LayoutInflater
+    get() = LayoutInflater.from(context)
