@@ -2,11 +2,17 @@ package com.aureusapps.android.extensions
 
 import android.annotation.SuppressLint
 import android.content.res.Resources.Theme
+import android.graphics.Color
 import android.util.TypedValue
 import androidx.annotation.AttrRes
+import androidx.annotation.DrawableRes
+import androidx.annotation.StyleRes
 import kotlin.math.roundToInt
 
-fun Theme.resolveStyleAttribute(@AttrRes attr: Int, default: Int = 0): Int {
+/**
+ * Retrieve the style resource id of an attribute in the theme.
+ */
+fun Theme.resolveStyleAttribute(@AttrRes attr: Int, @StyleRes default: Int = 0): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
             typedValue.resourceId
@@ -16,10 +22,16 @@ fun Theme.resolveStyleAttribute(@AttrRes attr: Int, default: Int = 0): Int {
     }
 }
 
+/**
+ * Check if an attribute is defined in the theme.
+ */
 fun Theme.hasAttribute(@AttrRes attr: Int): Boolean {
     return resolveAttribute(attr, TypedValue(), true)
 }
 
+/**
+ * Retrieve the float dimension value of an attribute in the theme.
+ */
 fun Theme.resolveDimensionAttribute(@AttrRes attr: Int, default: Float = 0f): Float {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
@@ -30,6 +42,9 @@ fun Theme.resolveDimensionAttribute(@AttrRes attr: Int, default: Float = 0f): Fl
     }
 }
 
+/**
+ * Retrieve the integer dimension value of an attribute in the theme.
+ */
 fun Theme.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
@@ -40,7 +55,10 @@ fun Theme.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): 
     }
 }
 
-fun Theme.resolveColorAttribute(@AttrRes attr: Int, default: Int = 0): Int {
+/**
+ * Retrieve the color value of an attribute in the theme.
+ */
+fun Theme.resolveColorAttribute(@AttrRes attr: Int, default: Int = Color.BLACK): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
             typedValue.data
@@ -50,7 +68,10 @@ fun Theme.resolveColorAttribute(@AttrRes attr: Int, default: Int = 0): Int {
     }
 }
 
-fun Theme.resolveDrawableAttribute(@AttrRes attr: Int, default: Int = 0): Int {
+/**
+ * Retrieve the drawable resource id of an attribute in the theme.
+ */
+fun Theme.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int = 0): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
             typedValue.resourceId
@@ -62,7 +83,12 @@ fun Theme.resolveDrawableAttribute(@AttrRes attr: Int, default: Int = 0): Int {
 
 @SuppressLint("ResourceType")
 fun Theme.obtainAndroidThemeOverlayId(): Int {
-    val a = obtainStyledAttributes(intArrayOf(android.R.attr.theme, com.google.android.material.R.attr.theme))
+    val a = obtainStyledAttributes(
+        intArrayOf(
+            android.R.attr.theme,
+            com.google.android.material.R.attr.theme
+        )
+    )
     val androidThemeId = a.getResourceId(0, 0)
     val appThemeId = a.getResourceId(1, 0)
     return if (androidThemeId != 0) androidThemeId else appThemeId

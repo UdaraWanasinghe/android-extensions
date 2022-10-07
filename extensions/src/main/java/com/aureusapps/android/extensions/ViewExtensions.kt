@@ -1,11 +1,15 @@
 package com.aureusapps.android.extensions
 
 import android.content.res.Resources
+import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.AttrRes
+import androidx.annotation.DrawableRes
+import androidx.annotation.StyleRes
+import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.*
 
 fun View.dismissKeyboard() {
@@ -23,11 +27,6 @@ fun View.minimumSize(): Pair<Int, Int> {
     val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
     measure(measureSpec, measureSpec)
     return measuredWidth to measuredHeight
-}
-
-fun View.setBackgroundResourceAttribute(@AttrRes attr: Int) {
-    val resId = context.theme.resolveDrawableAttribute(attr)
-    setBackgroundResource(resId)
 }
 
 inline fun <reified T : ViewModel> View.viewModels(): Lazy<T> {
@@ -131,3 +130,32 @@ val View.theme: Resources.Theme
 
 val View.layoutInflater: LayoutInflater
     get() = LayoutInflater.from(context)
+
+fun View.getDrawable(@DrawableRes resourceId: Int): Drawable {
+    return ResourcesCompat.getDrawable(resources, resourceId, theme)!!
+}
+
+fun View.setBackgroundResourceAttribute(@AttrRes attr: Int) {
+    val resId = context.theme.resolveDrawableAttribute(attr)
+    setBackgroundResource(resId)
+}
+
+fun View.resolveStyleAttribute(@AttrRes attr: Int, @StyleRes default: Int): Int {
+    return theme.resolveStyleAttribute(attr, default)
+}
+
+fun View.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int): Int {
+    return theme.resolveDrawableAttribute(attr, default)
+}
+
+fun View.resolveColorAttribute(@AttrRes attr: Int, default: Int): Int {
+    return theme.resolveColorAttribute(attr, default)
+}
+
+fun View.resolveDimensionAttribute(@AttrRes attr: Int, default: Float): Float {
+    return theme.resolveDimensionAttribute(attr, default)
+}
+
+fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int): Int {
+    return theme.resolvePixelDimensionAttribute(attr, default)
+}
