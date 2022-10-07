@@ -1,6 +1,7 @@
 package com.aureusapps.android.extensions
 
 import android.content.res.Resources
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
@@ -140,22 +141,22 @@ fun View.setBackgroundResourceAttribute(@AttrRes attr: Int) {
     setBackgroundResource(resId)
 }
 
-fun View.resolveStyleAttribute(@AttrRes attr: Int, @StyleRes default: Int): Int {
+fun View.resolveStyleAttribute(@AttrRes attr: Int, @StyleRes default: Int = 0): Int {
     return theme.resolveStyleAttribute(attr, default)
 }
 
-fun View.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int): Int {
+fun View.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int = 0): Int {
     return theme.resolveDrawableAttribute(attr, default)
 }
 
-fun View.resolveColorAttribute(@AttrRes attr: Int, default: Int): Int {
+fun View.resolveColorAttribute(@AttrRes attr: Int, default: Int = Color.BLACK): Int {
     return theme.resolveColorAttribute(attr, default)
 }
 
-fun View.resolveDimensionAttribute(@AttrRes attr: Int, default: Float): Float {
+fun View.resolveDimensionAttribute(@AttrRes attr: Int, default: Float = 0f): Float {
     return theme.resolveDimensionAttribute(attr, default)
 }
 
-fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int): Int {
+fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): Int {
     return theme.resolvePixelDimensionAttribute(attr, default)
 }
