@@ -1,7 +1,11 @@
 package com.aureusapps.android.extensions
 
+import android.content.Context
+import android.content.res.Resources
 import android.content.res.TypedArray
 import android.util.TypedValue
+import androidx.annotation.ArrayRes
+import androidx.annotation.StyleableRes
 
 inline fun <reified T : Enum<T>> TypedArray.getEnum(index: Int, default: T) =
     getInt(index, -1).let {
@@ -20,4 +24,8 @@ fun TypedArray.getFloatOrFraction(index: Int, default: Float = 1f): Float {
             default
         }
     }
+}
+
+fun TypedArray.getIntArray(resources: Resources, @StyleableRes index: Int, @ArrayRes default: Int): IntArray {
+    return resources.getIntArray(getResourceId(index, default))
 }
