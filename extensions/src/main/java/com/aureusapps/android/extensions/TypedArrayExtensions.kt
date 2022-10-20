@@ -1,6 +1,5 @@
 package com.aureusapps.android.extensions
 
-import android.content.Context
 import android.content.res.Resources
 import android.content.res.TypedArray
 import android.util.TypedValue

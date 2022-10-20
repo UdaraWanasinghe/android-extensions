@@ -160,3 +160,29 @@ fun View.resolveDimensionAttribute(@AttrRes attr: Int, default: Float = 0f): Flo
 fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): Int {
     return theme.resolvePixelDimensionAttribute(attr, default)
 }
+
+fun View.setVerticalMargin(margin: Int) {
+    val lp = layoutParams
+    if (lp is ViewGroup.MarginLayoutParams) {
+        lp.topMargin = margin
+        lp.bottomMargin = margin
+        layoutParams = lp
+    }
+}
+
+fun View.setHorizontalMargin(margin: Int) {
+    val lp = layoutParams
+    if (lp is ViewGroup.MarginLayoutParams) {
+        lp.leftMargin = margin
+        lp.rightMargin = margin
+        layoutParams = lp
+    }
+}
+
+fun View.setVerticalPadding(padding: Int) {
+    setPadding(paddingLeft, padding, paddingRight, padding)
+}
+
+fun View.setHorizontalPadding(padding: Int) {
+    setPadding(padding, paddingTop, padding, paddingBottom)
+}
