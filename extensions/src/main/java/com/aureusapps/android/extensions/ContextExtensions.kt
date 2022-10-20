@@ -75,13 +75,13 @@ fun Context.applyStyle(@StyleRes styleResId: Int): Context {
     return ContextThemeWrapper(this, styleResId)
 }
 
-fun Context.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int): Drawable {
+fun Context.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): Drawable {
     return theme.resolveDrawableAttribute(attr, default).let {
         ContextCompat.getDrawable(this, it)!!
     }
 }
 
-fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int): IntArray {
+fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArray {
     return theme.resolveIntArrayAttribute(attr,default).let {
         resources.getIntArray(it)
     }

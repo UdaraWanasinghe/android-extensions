@@ -188,10 +188,10 @@ fun View.setHorizontalPadding(padding: Int) {
     setPadding(padding, paddingTop, padding, paddingBottom)
 }
 
-fun View.resolveDrawable(@AttrRes attr: Int,@DrawableRes default: Int): Drawable {
+fun View.resolveDrawable(@AttrRes attr: Int,@DrawableRes default: Int = 0): Drawable {
     return context.resolveDrawable(attr, default)
 }
 
-fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int): IntArray {
+fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArray {
     return context.resolveIntArray(attr, default)
 }
