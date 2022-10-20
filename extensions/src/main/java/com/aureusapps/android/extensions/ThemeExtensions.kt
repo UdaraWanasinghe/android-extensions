@@ -2,10 +2,13 @@ package com.aureusapps.android.extensions
 
 import android.annotation.SuppressLint
 import android.content.res.Resources.Theme
+import android.content.res.TypedArray
 import android.graphics.Color
 import android.util.TypedValue
+import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
+import androidx.annotation.IntegerRes
 import androidx.annotation.StyleRes
 import kotlin.math.roundToInt
 
@@ -72,10 +75,18 @@ fun Theme.resolveColorAttribute(@AttrRes attr: Int, default: Int = Color.BLACK):
  * Retrieve the drawable resource id of an attribute in the theme.
  */
 fun Theme.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int = 0): Int {
+    return resolveResourceIdAttribute(attr, default)
+}
+
+fun Theme.resolveIntArrayAttribute(@AttrRes attr: Int, @ArrayRes default: Int = 0): Int {
+    return resolveResourceIdAttribute(attr, default)
+}
+
+fun Theme.resolveResourceIdAttribute(@AttrRes attr: Int, default: Int): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
             typedValue.resourceId
-        } else {
+        }else {
             default
         }
     }
