@@ -2,13 +2,11 @@ package com.aureusapps.android.extensions
 
 import android.annotation.SuppressLint
 import android.content.res.Resources.Theme
-import android.content.res.TypedArray
 import android.graphics.Color
 import android.util.TypedValue
 import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
-import androidx.annotation.IntegerRes
 import androidx.annotation.StyleRes
 import kotlin.math.roundToInt
 
