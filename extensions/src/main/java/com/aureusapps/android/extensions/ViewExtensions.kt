@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
@@ -185,4 +186,12 @@ fun View.setVerticalPadding(padding: Int) {
 
 fun View.setHorizontalPadding(padding: Int) {
     setPadding(padding, paddingTop, padding, paddingBottom)
+}
+
+fun View.resolveDrawable(@AttrRes attr: Int,@DrawableRes default: Int): Drawable {
+    return context.resolveDrawable(attr, default)
+}
+
+fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int): IntArray {
+    return context.resolveIntArray(attr, default)
 }

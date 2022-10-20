@@ -1,14 +1,18 @@
 package com.aureusapps.android.extensions
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
+import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.R
 
@@ -69,4 +73,16 @@ fun Context.useDefaultMaterialTheme(
  */
 fun Context.applyStyle(@StyleRes styleResId: Int): Context {
     return ContextThemeWrapper(this, styleResId)
+}
+
+fun Context.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int): Drawable {
+    return theme.resolveDrawableAttribute(attr, default).let {
+        ContextCompat.getDrawable(this, it)!!
+    }
+}
+
+fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int): IntArray {
+    return theme.resolveIntArrayAttribute(attr,default).let {
+        resources.getIntArray(it)
+    }
 }
