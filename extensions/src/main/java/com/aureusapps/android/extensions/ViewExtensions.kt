@@ -5,7 +5,7 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.ArrayRes
@@ -154,16 +154,24 @@ var View.horizontalMargin: Int
         return 0
     }
     set(value) {
-        val lp = layoutParams
-        if (lp is MarginLayoutParams) {
-            lp.leftMargin = value
-            lp.rightMargin = value
-            layoutParams = lp
-        } else {
-            val newLp = MarginLayoutParams(lp)
-            newLp.leftMargin = value
-            newLp.rightMargin = value
-            layoutParams = newLp
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.leftMargin = value
+                lp.rightMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.leftMargin = value
+                newLp.rightMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.leftMargin = value
+                newLp.rightMargin = value
+                layoutParams = newLp
+            }
         }
     }
 
@@ -176,16 +184,132 @@ var View.verticalMargin: Int
         return 0
     }
     set(value) {
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.topMargin = value
+                lp.bottomMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.topMargin = value
+                newLp.bottomMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.topMargin = value
+                newLp.bottomMargin = value
+                layoutParams = newLp
+            }
+        }
+    }
+
+var View.marginLeft: Int
+    get() {
         val lp = layoutParams
         if (lp is MarginLayoutParams) {
-            lp.topMargin = value
-            lp.bottomMargin = value
-            layoutParams = lp
-        } else {
-            val newLp = MarginLayoutParams(lp)
-            newLp.topMargin = value
-            newLp.bottomMargin = value
-            layoutParams = newLp
+            return lp.leftMargin
+        }
+        return 0
+    }
+    set(value) {
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.leftMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.leftMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.leftMargin = value
+                layoutParams = newLp
+            }
+        }
+    }
+
+var View.marginRight: Int
+    get() {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            return lp.rightMargin
+        }
+        return 0
+    }
+    set(value) {
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.rightMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.rightMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.rightMargin = value
+                layoutParams = newLp
+            }
+        }
+    }
+
+var View.marginTop: Int
+    get() {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            return lp.topMargin
+        }
+        return 0
+    }
+    set(value) {
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.topMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.topMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.topMargin = value
+                layoutParams = newLp
+            }
+        }
+    }
+
+var View.marginBottom: Int
+    get() {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            return lp.bottomMargin
+        }
+        return 0
+    }
+    set(value) {
+        when (val lp = layoutParams) {
+            is MarginLayoutParams -> {
+                lp.bottomMargin = value
+                layoutParams = lp
+            }
+            null -> {
+                val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+                newLp.bottomMargin = value
+                layoutParams = newLp
+            }
+            else -> {
+                val newLp = MarginLayoutParams(lp)
+                newLp.bottomMargin = value
+                layoutParams = newLp
+            }
         }
     }
 
@@ -199,6 +323,30 @@ var View.verticalPadding: Int
     get() = paddingTop + paddingBottom
     set(value) {
         setPadding(paddingLeft, value, paddingRight, value)
+    }
+
+var View.leftPadding
+    get() = paddingLeft
+    set(value) {
+        setPadding(value, paddingTop, paddingRight, paddingBottom)
+    }
+
+var View.rightPadding
+    get() = paddingRight
+    set(value) {
+        setPadding(paddingLeft, paddingTop, value, paddingBottom)
+    }
+
+var View.topPadding
+    get() = paddingTop
+    set(value) {
+        setPadding(paddingLeft, value, paddingRight, paddingBottom)
+    }
+
+var View.bottomPadding
+    get() = paddingBottom
+    set(value) {
+        setPadding(paddingLeft, paddingTop, paddingRight, value)
     }
 
 fun View.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): Drawable {
