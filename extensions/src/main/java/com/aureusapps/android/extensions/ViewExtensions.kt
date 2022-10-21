@@ -6,6 +6,7 @@ import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.InputMethodManager
 import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
@@ -73,28 +74,10 @@ fun View.setHeight(height: Int) {
     layoutParams = params
 }
 
-val View.verticalMargin: Int
-    get() {
-        val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
-            return lp.topMargin + lp.bottomMargin
-        }
-        return 0
-    }
-
-val View.horizontalMargin: Int
-    get() {
-        val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
-            return lp.leftMargin + lp.rightMargin
-        }
-        return 0
-    }
-
 val View.leftMargin: Int
     get() {
         val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
+        if (lp is MarginLayoutParams) {
             return lp.leftMargin
         }
         return 0
@@ -103,7 +86,7 @@ val View.leftMargin: Int
 val View.rightMargin: Int
     get() {
         val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
+        if (lp is MarginLayoutParams) {
             return lp.rightMargin
         }
         return 0
@@ -112,7 +95,7 @@ val View.rightMargin: Int
 val View.topMargin: Int
     get() {
         val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
+        if (lp is MarginLayoutParams) {
             return lp.topMargin
         }
         return 0
@@ -121,7 +104,7 @@ val View.topMargin: Int
 val View.bottomMargin: Int
     get() {
         val lp = layoutParams
-        if (lp is ViewGroup.MarginLayoutParams) {
+        if (lp is MarginLayoutParams) {
             return lp.bottomMargin
         }
         return 0
@@ -162,33 +145,63 @@ fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): I
     return theme.resolvePixelDimensionAttribute(attr, default)
 }
 
-fun View.setVerticalMargin(margin: Int) {
-    val lp = layoutParams
-    if (lp is ViewGroup.MarginLayoutParams) {
-        lp.topMargin = margin
-        lp.bottomMargin = margin
-        layoutParams = lp
+var View.horizontalMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            return lp.leftMargin + lp.rightMargin
+        }
+        return 0
     }
-}
-
-fun View.setHorizontalMargin(margin: Int) {
-    val lp = layoutParams
-    if (lp is ViewGroup.MarginLayoutParams) {
-        lp.leftMargin = margin
-        lp.rightMargin = margin
-        layoutParams = lp
+    set(value) {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            lp.leftMargin = value
+            lp.rightMargin = value
+            layoutParams = lp
+        } else {
+            val newLp = MarginLayoutParams(lp)
+            newLp.leftMargin = value
+            newLp.rightMargin = value
+            layoutParams = newLp
+        }
     }
-}
 
-fun View.setVerticalPadding(padding: Int) {
-    setPadding(paddingLeft, padding, paddingRight, padding)
-}
+var View.verticalMargin: Int
+    get() {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            return lp.topMargin + lp.bottomMargin
+        }
+        return 0
+    }
+    set(value) {
+        val lp = layoutParams
+        if (lp is MarginLayoutParams) {
+            lp.topMargin = value
+            lp.bottomMargin = value
+            layoutParams = lp
+        } else {
+            val newLp = MarginLayoutParams(lp)
+            newLp.topMargin = value
+            newLp.bottomMargin = value
+            layoutParams = newLp
+        }
+    }
 
-fun View.setHorizontalPadding(padding: Int) {
-    setPadding(padding, paddingTop, padding, paddingBottom)
-}
+var View.horizontalPadding
+    get() = paddingLeft + paddingRight
+    set(value) {
+        setPadding(value, paddingTop, value, paddingBottom)
+    }
 
-fun View.resolveDrawable(@AttrRes attr: Int,@DrawableRes default: Int = 0): Drawable {
+var View.verticalPadding: Int
+    get() = paddingTop + paddingBottom
+    set(value) {
+        setPadding(paddingLeft, value, paddingRight, value)
+    }
+
+fun View.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): Drawable {
     return context.resolveDrawable(attr, default)
 }
 
