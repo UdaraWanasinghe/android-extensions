@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "extensions"
+rootProject.name = "android-extensions"
 include ':example'
 include ':extensions'
