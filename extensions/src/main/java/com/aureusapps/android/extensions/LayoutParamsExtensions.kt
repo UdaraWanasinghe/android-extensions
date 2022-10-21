@@ -1,18 +1,17 @@
 package com.aureusapps.android.extensions
 
-import android.view.ViewGroup
-import android.view.ViewGroup.LayoutParams
+import android.view.ViewGroup.MarginLayoutParams
 
-fun LayoutParams.setVerticalMargin(margin: Int) {
-    if (this is ViewGroup.MarginLayoutParams) {
-        topMargin = margin
-        bottomMargin = margin
+var MarginLayoutParams.horizontalMargin
+    get() = leftMargin + rightMargin
+    set(value) {
+        leftMargin = value
+        rightMargin = value
     }
-}
 
-fun LayoutParams.setHorizontalMargin(margin: Int) {
-    if (this is ViewGroup.MarginLayoutParams) {
-        leftMargin = margin
-        rightMargin = margin
+var MarginLayoutParams.verticalMargin
+    get() = topMargin + bottomMargin
+    set(value) {
+        topMargin = value
+        bottomMargin = value
     }
-}
