@@ -1,6 +1,7 @@
 package com.aureusapps.android.extensions
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.AttributeSet
@@ -18,7 +19,7 @@ import com.google.android.material.R
 
 val Context.fragmentManager: FragmentManager? get() = when (this) {
     is AppCompatActivity -> supportFragmentManager
-    is ContextThemeWrapper -> baseContext.fragmentManager
+    is ContextWrapper -> baseContext.fragmentManager
     else -> null
 }
 
