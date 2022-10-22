@@ -16,12 +16,10 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
 import com.google.android.material.R
 
-fun Context?.getFragmentManager(): FragmentManager? {
-    return when (this) {
-        is AppCompatActivity -> supportFragmentManager
-        is ContextThemeWrapper -> baseContext.getFragmentManager()
-        else -> null
-    }
+val Context.fragmentManager: FragmentManager? get() = when (this) {
+    is AppCompatActivity -> supportFragmentManager
+    is ContextThemeWrapper -> baseContext.fragmentManager
+    else -> null
 }
 
 fun Context.getInputMethodManager(): InputMethodManager {
