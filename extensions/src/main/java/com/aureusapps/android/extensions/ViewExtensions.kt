@@ -1,8 +1,10 @@
 package com.aureusapps.android.extensions
 
 import android.content.res.Resources
+import android.content.res.TypedArray
 import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -355,4 +357,8 @@ fun View.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): Dra
 
 fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArray {
     return context.resolveIntArray(attr, default)
+}
+
+fun View.obtainStyledAttributes(set: AttributeSet?, attrs: IntArray, defStyleAttr: Int = 0, defStyleRes: Int = 0): TypedArray {
+    return context.theme.obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
 }
