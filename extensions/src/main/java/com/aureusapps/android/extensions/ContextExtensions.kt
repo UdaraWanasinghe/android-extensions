@@ -1,5 +1,6 @@
 package com.aureusapps.android.extensions
 
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.drawable.Drawable
@@ -7,6 +8,8 @@ import android.os.Build
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.inputmethod.InputMethodManager
+import androidx.activity.ComponentActivity
+import androidx.activity.viewModels
 import androidx.annotation.ArrayRes
 import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
@@ -14,14 +17,18 @@ import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.R
 
-val Context.fragmentManager: FragmentManager? get() = when (this) {
-    is AppCompatActivity -> supportFragmentManager
-    is ContextWrapper -> baseContext.fragmentManager
-    else -> null
-}
+val Context.fragmentManager: FragmentManager?
+    get() = when (this) {
+        is AppCompatActivity -> supportFragmentManager
+        is ContextWrapper -> baseContext.fragmentManager
+        else -> null
+    }
 
 fun Context.getInputMethodManager(): InputMethodManager {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -81,7 +88,24 @@ fun Context.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): 
 }
 
 fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArray {
-    return theme.resolveIntArrayAttribute(attr,default).let {
+    return theme.resolveIntArrayAttribute(attr, default).let {
         resources.getIntArray(it)
     }
 }
+
+/**
+ * Get the activity viewModels from the context.
+ */
+inline fun <reified T : ViewModel> Context.viewModels(): Lazy<T>? {
+    return when (this) {
+        is ComponentActivity -> viewModels()
+        else -> null
+    }
+}
+
+val Context.activity: Activity?
+    get() = when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.activity
+        else -> null
+    }

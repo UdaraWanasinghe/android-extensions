@@ -18,6 +18,7 @@ ext {
     room_version = '2.4.3'
     lifecycle_version = '2.5.1'
     okhttp_version = '4.10.0'
+    activity_version = '1.6.0'
 
     test_core_version = '1.4.0'
     espresso_version = '3.4.0'
