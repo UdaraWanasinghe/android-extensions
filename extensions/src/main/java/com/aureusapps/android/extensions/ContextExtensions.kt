@@ -96,10 +96,10 @@ fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): Int
 /**
  * Get the activity viewModels from the context.
  */
-inline fun <reified T : ViewModel> Context.viewModels(): Lazy<T>? {
+inline fun <reified T : ViewModel> Context.viewModels(): Lazy<T> {
     return when (this) {
         is ComponentActivity -> viewModels()
-        else -> null
+        else -> throw IllegalStateException("Context is not an activity")
     }
 }
 
