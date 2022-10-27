@@ -16,13 +16,13 @@ private val dimenMap = mapOf(
     "mm" to TypedValue.COMPLEX_UNIT_MM
 )
 
-fun AttributeSet.getColorAttr(
+fun AttributeSet.getColorAttribute(
     context: Context,
     attrName: String,
     defaultColor: Int = Color.BLACK
 ): Int? {
     return try {
-        val attrIndex = getAttrPos(attrName)
+        val attrIndex = getAttributePosition(attrName)
         if (attrIndex < 0) {
             null
         } else {
@@ -51,8 +51,8 @@ fun AttributeSet.getColorAttr(
     }
 }
 
-fun AttributeSet.getFloatAttr(context: Context, attrName: String): Float? {
-    val attrIndex = getAttrPos(attrName)
+fun AttributeSet.getFloatAttribute(context: Context, attrName: String): Float? {
+    val attrIndex = getAttributePosition(attrName)
     return if (attrIndex < 0) {
         null
     } else {
@@ -78,8 +78,8 @@ fun AttributeSet.getFloatAttr(context: Context, attrName: String): Float? {
     }
 }
 
-fun AttributeSet.getDimenAttr(context: Context, attrName: String): Float? {
-    val attrIndex = getAttrPos(attrName)
+fun AttributeSet.getDimensionAttribute(context: Context, attrName: String): Float? {
+    val attrIndex = getAttributePosition(attrName)
     if (attrIndex < 0) {
         return null
     }
@@ -113,7 +113,7 @@ fun AttributeSet.getDimenAttr(context: Context, attrName: String): Float? {
     }
 }
 
-fun AttributeSet.getAttrPos(attrName: String): Int {
+fun AttributeSet.getAttributePosition(attrName: String): Int {
     return (0 until attributeCount)
         .firstOrNull { i -> getAttributeName(i) == attrName } ?: -1
 }

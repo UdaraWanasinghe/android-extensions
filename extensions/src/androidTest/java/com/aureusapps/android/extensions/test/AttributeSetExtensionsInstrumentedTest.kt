@@ -6,8 +6,8 @@ import android.util.Xml
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.forEachTag
-import com.aureusapps.android.extensions.getColorAttr
-import com.aureusapps.android.extensions.getDimenAttr
+import com.aureusapps.android.extensions.getColorAttribute
+import com.aureusapps.android.extensions.getDimensionAttribute
 import com.aureusapps.android.extensions.wrapTheme
 import org.junit.Assert
 import org.junit.Test
@@ -39,9 +39,9 @@ class AttributeSetExtensionsInstrumentedTest {
                 when (parser.name) {
                     "path" -> {
                         val attrs = Xml.asAttributeSet(parser)
-                        val fillColor = attrs.getColorAttr(context, "fillColor")
+                        val fillColor = attrs.getColorAttribute(context, "fillColor")
                         Assert.assertEquals(expectedColors[currentIndex], fillColor)
-                        val strokeWidth = attrs.getDimenAttr(context, "strokeWidth")
+                        val strokeWidth = attrs.getDimensionAttribute(context, "strokeWidth")
                         Assert.assertEquals(expectedDimens[currentIndex], strokeWidth)
                         currentIndex++
                     }
