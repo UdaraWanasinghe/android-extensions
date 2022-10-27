@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions
+package com.aureusapps.android.extensions.test
 
 import android.Manifest
 import android.content.Context
@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.aureusapps.android.extensions.readFile
+import com.aureusapps.android.extensions.toHttps
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.junit.Assert

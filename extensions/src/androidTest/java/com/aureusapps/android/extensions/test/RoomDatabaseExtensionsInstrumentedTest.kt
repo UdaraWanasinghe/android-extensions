@@ -1,10 +1,12 @@
-package com.aureusapps.android.extensions
+package com.aureusapps.android.extensions.test
 
 import android.content.Context
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.db.*
+import com.aureusapps.android.extensions.test.db.*
+import com.aureusapps.android.extensions.resetDatabase
+import com.aureusapps.android.extensions.test.db.*
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before

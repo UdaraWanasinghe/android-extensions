@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+
+    <style name="TestTheme">
+        <item name="colorPrimary">@color/blue</item>
+        <item name="strokeWidth">2dp</item>
+    </style>
+</resources>

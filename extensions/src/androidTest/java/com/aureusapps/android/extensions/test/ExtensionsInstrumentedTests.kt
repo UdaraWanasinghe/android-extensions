@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions
+package com.aureusapps.android.extensions.test
 
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
@@ -7,6 +7,7 @@ import org.junit.runners.Suite
 @Suite.SuiteClasses(
     UrlExtensionsInstrumentedTest::class,
     RoomDatabaseExtensionsInstrumentedTest::class,
-    InputStreamExtensionsInstrumentedTest::class
+    InputStreamExtensionsInstrumentedTest::class,
+    AttributeSetExtensionsInstrumentedTest::class
 )
 class ExtensionsInstrumentedTests
