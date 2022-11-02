@@ -60,34 +60,3 @@ fun Matrix.getRotation(px: Float, py: Float): Float {
     postTranslate(px, py)
     return r
 }
-
-/**
- * Set scaling around the pivot point.
- *
- * @param sx scaling x
- * @param sy scaling y
- * @param px pivot x
- * @param py pivot y
- */
-fun Matrix.setScaling(sx: Float, sy: Float, px: Float, py: Float) {
-    postTranslate(-px, -py)
-    val cs = scaling
-    val dsx = sx / cs.first
-    val dsy = sy / cs.second
-    postScale(dsx, dsy)
-    postTranslate(px, py)
-}
-
-/**
- * Set rotation around the pivot point.
- *
- * @param r rotation around the pivot point
- * @param px pivot x
- * @param py pivot y
- */
-fun Matrix.setRotation(r: Float, px: Float, py: Float) {
-    postTranslate(-px, -py)
-    val dr = r - rotation
-    postRotate(dr)
-    postTranslate(px, py)
-}
