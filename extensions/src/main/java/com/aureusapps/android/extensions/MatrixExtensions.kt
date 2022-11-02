@@ -1,91 +1,93 @@
 package com.aureusapps.android.extensions
 
-
 import android.graphics.Matrix
 import androidx.core.graphics.values
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
+/**
+ * Returns the translation.
+ */
 val Matrix.translation: Pair<Float, Float>
     get() {
         val values = values()
         return values[2] to values[5]
     }
 
-val Matrix.scaling: Float
+/**
+ * Returns scaling around the origin.
+ */
+val Matrix.scaling: Pair<Float, Float>
     get() {
         val values = values()
         val sx = sqrt(values[0] * values[0] + values[3] * values[3])
         val sy = sqrt(values[1] * values[1] + values[4] * values[4])
-        return (sx + sy) / 2
+        return sx to sy
     }
 
+/**
+ * Returns rotation around the origin in degrees.
+ */
 val Matrix.rotation: Float
     get() {
         val values = values()
         return atan2(values[3], values[4]) * 180f / PI.toFloat()
     }
 
-fun Matrix.getTranslation(pivotPoint: FloatArray): Pair<Float, Float> {
-    mapPoints(pivotPoint)
-    return pivotPoint[0] to pivotPoint[1]
+/**
+ * Get scaling around the pivot point.
+ *
+ * @param px pivot x
+ * @param py pivot y
+ */
+fun Matrix.getScaling(px: Float, py: Float): Pair<Float, Float> {
+    postTranslate(-px, -py)
+    val s = scaling
+    postTranslate(px, py)
+    return s
 }
 
-fun Matrix.setTranslation(newTranslation: Pair<Float, Float>, pivotPoint: FloatArray) {
-    mapPoints(pivotPoint)
-    val (newTransX, newTransY) = newTranslation
-    val values = values()
-    values[2] += newTransX - pivotPoint[0]
-    values[5] += newTransY - pivotPoint[1]
-    setValues(values)
+/**
+ * Get rotation around the pivot point.
+ *
+ * @param px pivot x
+ * @param py pivot y
+ */
+fun Matrix.getRotation(px: Float, py: Float): Float {
+    postTranslate(-px, -py)
+    val r = rotation
+    postTranslate(px, py)
+    return r
 }
 
-fun Matrix.setScaling(newScaling: Float, pivotPoint: Pair<Float, Float>) {
-    // get old translation
-    val (px, py) = pivotPoint
-    val pp = floatArrayOf(px, py)
-    mapPoints(pp)
-    val tx = pp[0]
-    val ty = pp[1]
-    // update params
-    val rotation = rotation
-    reset()
-    preScale(newScaling, newScaling, px, py)
-    preRotate(rotation, px, py)
-    // fix translation
-    pp[0] = px
-    pp[1] = py
-    mapPoints(pp)
-    val values = values()
-    values[2] += tx - pp[0]
-    values[5] += ty - pp[1]
-    setValues(values)
+/**
+ * Set scaling around the pivot point.
+ *
+ * @param sx scaling x
+ * @param sy scaling y
+ * @param px pivot x
+ * @param py pivot y
+ */
+fun Matrix.setScaling(sx: Float, sy: Float, px: Float, py: Float) {
+    postTranslate(-px, -py)
+    val cs = scaling
+    val dsx = sx / cs.first
+    val dsy = sy / cs.second
+    postScale(dsx, dsy)
+    postTranslate(px, py)
 }
 
-fun Matrix.setRotation(newRotation: Float, pivotPoint: Pair<Float, Float>) {
-    val (px, py) = pivotPoint
-    val pp = floatArrayOf(px, py)
-    // get old location of the pivot point
-    // this is the translation of the object relative to pivot point
-    mapPoints(pp)
-    val tx = pp[0]
-    val ty = pp[1]
-    // update both scaling and rotation as changing one will change the other
-    // save old
-    val scaling = scaling
-    // reset and update
-    reset()
-    preScale(scaling, scaling, px, py)
-    preRotate(newRotation, px, py)
-    // fix translation
-    // find location of the pivot point
-    pp[0] = px
-    pp[1] = py
-    mapPoints(pp)
-    // bring pivot point back to its initial location
-    val values = values()
-    values[2] += tx - pp[0]
-    values[5] += ty - pp[1]
-    setValues(values)
+/**
+ * Set rotation around the pivot point.
+ *
+ * @param r rotation around the pivot point
+ * @param px pivot x
+ * @param py pivot y
+ */
+fun Matrix.setRotation(r: Float, px: Float, py: Float) {
+    postTranslate(-px, -py)
+    val dr = r - rotation
+    postRotate(dr)
+    postTranslate(px, py)
 }
