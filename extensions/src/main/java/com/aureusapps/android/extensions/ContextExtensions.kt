@@ -17,10 +17,9 @@ import androidx.annotation.StyleRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.R
 
 val Context.fragmentManager: FragmentManager?
@@ -107,5 +106,26 @@ val Context.activity: Activity?
     get() = when (this) {
         is Activity -> this
         is ContextWrapper -> baseContext.activity
+        else -> null
+    }
+
+val Context.fragmentActivity: FragmentActivity?
+    get() = when (this) {
+        is FragmentActivity -> this
+        is ContextWrapper -> baseContext.fragmentActivity
+        else -> null
+    }
+
+val Context.appCompatActivity: AppCompatActivity?
+    get() = when (this) {
+        is AppCompatActivity -> this
+        is ContextWrapper -> baseContext.appCompatActivity
+        else -> null
+    }
+
+val Context.componentActivity: ComponentActivity?
+    get() = when (this) {
+        is ComponentActivity -> this
+        is ContextWrapper -> baseContext.componentActivity
         else -> null
     }
