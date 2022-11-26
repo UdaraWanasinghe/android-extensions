@@ -1,31 +1,29 @@
 package com.aureusapps.android.extensions
 
-import java.util.*
-
-fun <E> ArrayList<E>.move(fromIndex: Int, toIndex: Int) {
-    if (fromIndex >= size || fromIndex < 0)
-        throw IndexOutOfBoundsException(outOfBoundsMsg(fromIndex, size))
-    if (toIndex >= size || toIndex < 0)
-        throw IndexOutOfBoundsException(outOfBoundsMsg(toIndex, size))
-    if (fromIndex == toIndex) return
-    if (fromIndex < toIndex) {
-        var from = fromIndex
-        val item = set(from, get(from + 1))
-        from++
-        while (from < toIndex) {
-            set(from, get(from + 1))
-            from++
+fun <E> ArrayList<E>.move(from: Int, to: Int) {
+    if (from >= size || from < 0)
+        throw IndexOutOfBoundsException(outOfBoundsMsg(from, size))
+    if (to >= size || to < 0)
+        throw IndexOutOfBoundsException(outOfBoundsMsg(to, size))
+    if (from == to) return
+    if (from < to) {
+        var f = from
+        val item = set(f, get(f + 1))
+        f++
+        while (f < to) {
+            set(f, get(f + 1))
+            f++
         }
-        set(toIndex, item)
+        set(to, item)
     } else {
-        var from = fromIndex
-        val item = set(from, get(from - 1))
-        from--
-        while (from > toIndex) {
-            set(from, get(from - 1))
-            from--
+        var f = from
+        val item = set(f, get(f - 1))
+        f--
+        while (f > to) {
+            set(f, get(f - 1))
+            f--
         }
-        set(toIndex, item)
+        set(to, item)
     }
 }
 

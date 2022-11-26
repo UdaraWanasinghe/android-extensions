@@ -1,27 +1,27 @@
 package com.aureusapps.android.extensions
 
-fun <E> MutableList<E>.move(fromIndex: Int, toIndex: Int) {
-    if (fromIndex >= size || fromIndex < 0)
-        throw IndexOutOfBoundsException(outOfBoundsMsg(fromIndex, size))
+fun <E> MutableList<E>.move(from: Int, toIndex: Int) {
+    if (from >= size || from < 0)
+        throw IndexOutOfBoundsException(outOfBoundsMsg(from, size))
     if (toIndex >= size || toIndex < 0)
         throw IndexOutOfBoundsException(outOfBoundsMsg(toIndex, size))
-    if (fromIndex == toIndex) return
-    if (fromIndex < toIndex) {
-        var from = fromIndex
-        val item = set(from, get(from + 1))
-        from++
-        while (from < toIndex) {
-            set(from, get(from + 1))
-            from++
+    if (from == toIndex) return
+    if (from < toIndex) {
+        var f = from
+        val item = set(f, get(f + 1))
+        f++
+        while (f < toIndex) {
+            set(f, get(f + 1))
+            f++
         }
         set(toIndex, item)
     } else {
-        var from = fromIndex
-        val item = set(from, get(from - 1))
-        from--
-        while (from > toIndex) {
-            set(from, get(from - 1))
-            from--
+        var f = from
+        val item = set(f, get(f - 1))
+        f--
+        while (f > toIndex) {
+            set(f, get(f - 1))
+            f--
         }
         set(toIndex, item)
     }
