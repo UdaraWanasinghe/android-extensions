@@ -35,17 +35,21 @@ fun View.minimumSize(): Pair<Int, Int> {
 }
 
 inline fun <reified T : ViewModel> View.viewModels(): Lazy<T> {
-    val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
-        "View $this does not has a ViewModelStoreOwner set"
-    )
-    return lazy { ViewModelProvider(storeOwner).get(T::class.java) }
+    return lazy {
+        val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
+            "View $this does not has a ViewModelStoreOwner set"
+        )
+        ViewModelProvider(storeOwner)[T::class.java]
+    }
 }
 
 inline fun <reified T : ViewModel> View.viewModels(factory: ViewModelProvider.Factory): Lazy<T> {
-    val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
-        "View $this does not has a ViewModelStoreOwner set"
-    )
-    return lazy { ViewModelProvider(storeOwner, factory).get(T::class.java) }
+    return lazy {
+        val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
+            "View $this does not has a ViewModelStoreOwner set"
+        )
+        ViewModelProvider(storeOwner, factory)[T::class.java]
+    }
 }
 
 val View.lifecycleScope: LifecycleCoroutineScope
