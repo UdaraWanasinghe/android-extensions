@@ -60,3 +60,14 @@ fun Matrix.getRotation(px: Float, py: Float): Float {
     postTranslate(px, py)
     return r
 }
+
+/**
+ * Returns a copy of the matrix.
+ *
+ * @param matrix Optional matrix to copy to.
+ * @return A copy of the matrix.
+ */
+fun Matrix.copy(matrix: Matrix = Matrix()): Matrix {
+    matrix.set(this)
+    return matrix
+}
