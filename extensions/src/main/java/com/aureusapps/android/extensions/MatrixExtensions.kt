@@ -15,6 +15,13 @@ val Matrix.translation: Pair<Float, Float>
         return values[2] to values[5]
     }
 
+fun Matrix.setTranslation(x: Float, y: Float) {
+    val values = values()
+    values[2] = x
+    values[5] = y
+    setValues(values)
+}
+
 /**
  * Returns scaling around the origin.
  */
