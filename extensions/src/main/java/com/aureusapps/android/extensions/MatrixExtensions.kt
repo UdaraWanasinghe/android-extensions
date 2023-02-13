@@ -2,12 +2,10 @@ package com.aureusapps.android.extensions
 
 import android.graphics.Matrix
 import androidx.core.graphics.values
-import kotlin.math.PI
-import kotlin.math.atan2
-import kotlin.math.sqrt
+import kotlin.math.*
 
 /**
- * Returns the translation.
+ * Returns the translation around the pivot point.
  */
 val Matrix.translation: Pair<Float, Float>
     get() {
@@ -15,10 +13,10 @@ val Matrix.translation: Pair<Float, Float>
         return values[2] to values[5]
     }
 
-fun Matrix.setTranslation(x: Float, y: Float) {
+fun Matrix.setTranslation(tx: Float, ty: Float) {
     val values = values()
-    values[2] = x
-    values[5] = y
+    values[2] = tx
+    values[5] = ty
     setValues(values)
 }
 
@@ -32,6 +30,16 @@ val Matrix.scaling: Pair<Float, Float>
         val sy = sqrt(values[1] * values[1] + values[4] * values[4])
         return sx to sy
     }
+
+fun Matrix.setScaling(sx: Float, sy: Float) {
+    val values = values()
+    val theta = atan2(values[3], values[4])
+    values[0] = sx * cos(theta)
+    values[1] = sx * sin(theta)
+    values[3] = -sy * sin(theta)
+    values[4] = sy * cos(theta)
+    setValues(values)
+}
 
 /**
  * Returns rotation around the origin in degrees.
