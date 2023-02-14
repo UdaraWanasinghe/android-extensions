@@ -2,6 +2,9 @@ package com.aureusapps.android.extensions
 
 import android.graphics.Matrix
 import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Utils to manipulate matrices.
@@ -86,7 +89,7 @@ object MatrixUtils {
     }
 
     /**
-     * Get rotation of transformed space relative to the (0, 0) point on original space.
+     * Get rotation of transformed space relative to (0, 0) point on original space.
      *
      * ⌈ A B C ⌉
      *
@@ -107,8 +110,33 @@ object MatrixUtils {
         return atan2(tempValues[3], tempValues[0]).toDegrees()
     }
 
+    /**
+     * Set rotation of the transformed space relative to (0, 0) point on original space.
+     *
+     * ⌈ A B C ⌉
+     *
+     * | D E F |
+     *
+     * ⌊ G H I ⌋
+     *
+     * A(0) = sx ✕ cos(a)
+     *
+     * B(1) = -sy ✕ sin(a)
+     *
+     * D(3) = sx ✕ sin(a)
+     *
+     * E(4) = sy ✕ cos(a)
+     */
     fun setRotation(matrix: Matrix, degrees: Float) {
-
+        matrix.getValues(tempValues)
+        val sx = sqrt(tempValues[0] * tempValues[0] + tempValues[3] * tempValues[3])
+        val sy = sqrt(tempValues[1] * tempValues[1] + tempValues[4] * tempValues[4])
+        val rad = degrees.toRadians()
+        tempValues[0] = sx * cos(rad)
+        tempValues[1] = -sy * sin(rad)
+        tempValues[3] = sx * sin(rad)
+        tempValues[4] = sy * cos(rad)
+        matrix.setValues(tempValues)
     }
 
     fun getRotation(matrix: Matrix, px: Float, py: Float): Float {
