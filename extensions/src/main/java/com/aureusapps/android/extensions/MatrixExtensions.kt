@@ -5,7 +5,7 @@ import androidx.core.graphics.values
 import kotlin.math.*
 
 /**
- * Returns the translation around the pivot point.
+ * Get translation or location of the origin point of transformed space relative to original space.
  */
 val Matrix.translation: Pair<Float, Float>
     get() {
@@ -13,10 +13,49 @@ val Matrix.translation: Pair<Float, Float>
         return values[2] to values[5]
     }
 
+/**
+ * Set translation or location of the origin point of transformed space relative to original space.
+ *
+ * @param tx New x coordinate of the origin point.
+ * @param ty New y coordinate of the origin point.
+ */
 fun Matrix.setTranslation(tx: Float, ty: Float) {
     val values = values()
     values[2] = tx
     values[5] = ty
+    setValues(values)
+}
+
+/**
+ * Get translation of the point.
+ * Gives location of the point relative to the location of the point on original space.
+ *
+ * @param px x coordinate of the point on original space.
+ * @param py y coordinate of the point on original space.
+ */
+fun Matrix.getTranslation(px: Float, py: Float): Pair<Float, Float> {
+    val pts = floatArrayOf(px, py)
+    mapPoints(pts)
+    return (pts[0] - px) to (pts[1] - py)
+}
+
+/**
+ * Set translation of the point relative to the location of it in the original space.
+ * This function is not thread safe
+ *
+ * @param tx x translation of [px] on original space.
+ * @param ty y translation of [py] on original space.
+ * @param px x coordinate of the point in original space.
+ * @param py y coordinate of the point in original space.
+ */
+fun Matrix.setTranslation(tx: Float, ty: Float, px: Float, py: Float) {
+    // get location of (px, py) on transformed space.
+    val pts = floatArrayOf(px, py)
+    mapPoints(pts)
+    // find difference in translation and add it to the translation values.
+    val values = values()
+    values[2] += tx - pts[0] + px
+    values[5] += ty - pts[1] + py
     setValues(values)
 }
 

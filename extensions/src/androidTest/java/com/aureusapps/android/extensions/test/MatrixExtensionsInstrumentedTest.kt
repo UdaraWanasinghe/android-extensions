@@ -2,10 +2,7 @@ package com.aureusapps.android.extensions.test
 
 import android.graphics.Matrix
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.getRotation
-import com.aureusapps.android.extensions.getScaling
-import com.aureusapps.android.extensions.rotation
-import com.aureusapps.android.extensions.scaling
+import com.aureusapps.android.extensions.*
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -65,6 +62,40 @@ class MatrixExtensionsInstrumentedTest {
         s = m.getScaling(20f, 20f)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
+    }
+
+    @Test
+    fun testSetTranslation() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.postRotate(30f)
+        m.postTranslate(10f, 20f)
+        val (tx, ty) = m.translation
+        Assert.assertEquals(10f, tx, 0.1f)
+        Assert.assertEquals(20f, ty, 0.1f)
+    }
+
+    @Test
+    fun testGetTranslationPxPy() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.postRotate(30f)
+        m.postTranslate(10f, 20f)
+        val (tx, ty) = m.getTranslation(5f, 5f)
+        Assert.assertEquals(8.66f, tx, 0.1f)
+        Assert.assertEquals(28.66f, ty, 0.1f)
+    }
+
+    @Test
+    fun testSetTranslationTxTyPxPy() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.postRotate(30f)
+        m.postTranslate(10f, 20f)
+        m.setTranslation(30f, 30f, 5f, 5f)
+        val (tx, ty) = m.getTranslation(5f, 5f)
+        Assert.assertEquals(30f, tx, 0.1f)
+        Assert.assertEquals(30f, ty, 0.1f)
     }
 
 }
