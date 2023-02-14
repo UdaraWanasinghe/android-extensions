@@ -94,6 +94,14 @@ fun Matrix.getRotation(px: Float, py: Float): Float {
 }
 
 /**
+ * Set rotation around the given point.
+ */
+fun Matrix.setRotation(degrees: Float, px: Float, py: Float) {
+    val cr = getRotation(px, py)
+    postRotate(degrees - cr, px, py)
+}
+
+/**
  * Returns scaling around the origin.
  */
 val Matrix.scaling: Pair<Float, Float>

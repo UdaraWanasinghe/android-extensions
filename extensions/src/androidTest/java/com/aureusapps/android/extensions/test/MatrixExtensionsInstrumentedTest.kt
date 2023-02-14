@@ -61,8 +61,7 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        val rotation = m.rotation
-        Assert.assertEquals(30f, rotation, 0.1f)
+        Assert.assertEquals(30f, m.rotation, 0.1f)
     }
 
     @Test
@@ -71,12 +70,11 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f)
         m.setRotation(30f)
         m.postTranslate(10f, 20f)
-        val rotation = m.rotation
-        Assert.assertEquals(30f, rotation, 0.1f)
+        Assert.assertEquals(30f, m.rotation, 0.1f)
     }
 
     @Test
-    fun testMatrixGetRotationAroundPivot() {
+    fun testGetRotationPxPy() {
         // only rotate
         val m = Matrix()
         m.postRotate(45f)
@@ -96,6 +94,15 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f, 10f, 10f)
         m.postTranslate(10f, 10f)
         Assert.assertEquals(45f, m.getRotation(20f, 20f))
+    }
+
+    @Test
+    fun testSetRotationPxPy() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.setRotation(30f, 5f, 5f)
+        m.postTranslate(10f, 10f)
+        Assert.assertEquals(30f, m.getRotation(5f, 5f))
     }
 
     @Test
