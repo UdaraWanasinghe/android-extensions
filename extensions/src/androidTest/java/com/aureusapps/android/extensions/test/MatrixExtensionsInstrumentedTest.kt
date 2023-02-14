@@ -44,6 +44,18 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
+    fun testSetTranslationTxTyPxPy() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.postRotate(30f)
+        m.postTranslate(10f, 20f)
+        m.setTranslation(30f, 30f, 5f, 5f)
+        val (tx, ty) = m.getTranslation(5f, 5f)
+        Assert.assertEquals(30f, tx, 0.1f)
+        Assert.assertEquals(30f, ty, 0.1f)
+    }
+
+    @Test
     fun testGetRotation() {
         val m = Matrix()
         m.postScale(2f, 2f)
@@ -54,15 +66,13 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testSetTranslationTxTyPxPy() {
+    fun testSetRotation() {
         val m = Matrix()
         m.postScale(2f, 2f)
-        m.postRotate(30f)
+        m.setRotation(30f)
         m.postTranslate(10f, 20f)
-        m.setTranslation(30f, 30f, 5f, 5f)
-        val (tx, ty) = m.getTranslation(5f, 5f)
-        Assert.assertEquals(30f, tx, 0.1f)
-        Assert.assertEquals(30f, ty, 0.1f)
+        val rotation = m.rotation
+        Assert.assertEquals(30f, rotation, 0.1f)
     }
 
     @Test
