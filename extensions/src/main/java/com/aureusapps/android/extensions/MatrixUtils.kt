@@ -4,6 +4,7 @@ import android.graphics.Matrix
 import kotlin.math.atan2
 
 /**
+ * Utils to manipulate matrices.
  * This class is not thread safe.
  */
 object MatrixUtils {
@@ -17,13 +18,16 @@ object MatrixUtils {
      * @param matrix matrix to get translation.
      * @return translation x and y values.
      *
-     * | A B C |
+     * ⌈ A B C ⌉
      *
      * | D E F |
      *
-     * | G H I |
+     * ⌊ G H I ⌋
      *
-     * C and F gives the translation values tx and ty.
+     * C(2) = tx
+     *
+     * F(5) = ty
+     *
      */
     fun getTranslation(matrix: Matrix): Pair<Float, Float> {
         matrix.getValues(tempValues)
@@ -37,13 +41,15 @@ object MatrixUtils {
      * @param tx translation x coordinate.
      * @param ty translation y coordinate.
      *
-     * | A B C |
+     * ⌈ A B C ⌉
      *
      * | D E F |
      *
-     * | G H I |
+     * ⌊ G H I ⌋
      *
-     * C and F gives the translation values tx and ty.
+     * C(2) = tx
+     *
+     * F(5) = ty
      */
     fun setTranslation(matrix: Matrix, tx: Float, ty: Float) {
         matrix.getValues(tempValues)
@@ -79,9 +85,26 @@ object MatrixUtils {
         matrix.setValues(tempValues)
     }
 
+    /**
+     * Get rotation of transformed space relative to the (0, 0) point on original space.
+     *
+     * ⌈ A B C ⌉
+     *
+     * | D E F |
+     *
+     * ⌊ G H I ⌋
+     *
+     * A(0) = sx ✕ cos(a)
+     *
+     * B(1) = -sy ✕ sin(a)
+     *
+     * D(3) = sx ✕ sin(a)
+     *
+     * E(4) = sy ✕ cos(a)
+     */
     fun getRotation(matrix: Matrix): Float {
         matrix.getValues(tempValues)
-        return atan2(tempValues[3], tempValues[4]).toDegrees()
+        return atan2(tempValues[3], tempValues[0]).toDegrees()
     }
 
     fun setRotation(matrix: Matrix, degrees: Float) {
