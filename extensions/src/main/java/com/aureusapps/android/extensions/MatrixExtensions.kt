@@ -60,6 +60,28 @@ fun Matrix.setTranslation(tx: Float, ty: Float, px: Float, py: Float) {
 }
 
 /**
+ * Returns rotation around the origin in degrees.
+ */
+val Matrix.rotation: Float
+    get() {
+        val values = values()
+        return atan2(values[3], values[4]) * 180f / PI.toFloat()
+    }
+
+/**
+ * Get rotation relative to the pivot point.
+ *
+ * @param px pivot x
+ * @param py pivot y
+ */
+fun Matrix.getRotation(px: Float, py: Float): Float {
+    postTranslate(-px, -py)
+    val r = rotation
+    postTranslate(px, py)
+    return r
+}
+
+/**
  * Returns scaling around the origin.
  */
 val Matrix.scaling: Pair<Float, Float>
@@ -81,15 +103,6 @@ fun Matrix.setScaling(sx: Float, sy: Float) {
 }
 
 /**
- * Returns rotation around the origin in degrees.
- */
-val Matrix.rotation: Float
-    get() {
-        val values = values()
-        return atan2(values[3], values[4]) * 180f / PI.toFloat()
-    }
-
-/**
  * Get scaling around the pivot point.
  *
  * @param px pivot x
@@ -100,19 +113,6 @@ fun Matrix.getScaling(px: Float, py: Float): Pair<Float, Float> {
     val s = scaling
     postTranslate(px, py)
     return s
-}
-
-/**
- * Get rotation around the pivot point.
- *
- * @param px pivot x
- * @param py pivot y
- */
-fun Matrix.getRotation(px: Float, py: Float): Float {
-    postTranslate(-px, -py)
-    val r = rotation
-    postTranslate(px, py)
-    return r
 }
 
 /**
