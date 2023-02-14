@@ -2,7 +2,10 @@ package com.aureusapps.android.extensions
 
 import android.graphics.Matrix
 import androidx.core.graphics.values
-import kotlin.math.*
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Get translation or location of the origin point of transformed space relative to original space.
@@ -65,8 +68,17 @@ fun Matrix.setTranslation(tx: Float, ty: Float, px: Float, py: Float) {
 val Matrix.rotation: Float
     get() {
         val values = values()
-        return atan2(values[3], values[4]) * 180f / PI.toFloat()
+        return atan2(values[3], values[4]).toDegrees()
     }
+
+/**
+ * Set rotation of the matrix around the origin point in degrees.
+ */
+fun Matrix.setRotation(degrees: Float) {
+    val values = values()
+    val cr = atan2(values[3], values[4]).toDegrees()
+    postRotate(degrees - cr)
+}
 
 /**
  * Get rotation relative to the pivot point.

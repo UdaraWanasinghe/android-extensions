@@ -44,6 +44,16 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
+    fun testGetRotation() {
+        val m = Matrix()
+        m.postScale(2f, 2f)
+        m.postRotate(30f)
+        m.postTranslate(10f, 20f)
+        val rotation = m.rotation
+        Assert.assertEquals(30f, rotation, 0.1f)
+    }
+
+    @Test
     fun testSetTranslationTxTyPxPy() {
         val m = Matrix()
         m.postScale(2f, 2f)
