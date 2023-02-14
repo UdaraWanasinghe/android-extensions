@@ -17,8 +17,8 @@ class MatrixExtensionsInstrumentedTest {
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
         val (tx, ty) = m.translation
-        Assert.assertEquals(tx, 10f, 0.1f)
-        Assert.assertEquals(ty, 20f, 0.1f)
+        Assert.assertEquals(10f, tx, 0.1f)
+        Assert.assertEquals(20f, ty, 0.1f)
     }
 
     @Test
@@ -28,8 +28,8 @@ class MatrixExtensionsInstrumentedTest {
         m.postRotate(30f)
         m.setTranslation(10f, 20f)
         val (tx, ty) = m.translation
-        Assert.assertEquals(tx, 10f, 0.1f)
-        Assert.assertEquals(ty, 20f, 0.1f)
+        Assert.assertEquals(10f, tx, 0.1f)
+        Assert.assertEquals(20f, ty, 0.1f)
     }
 
     @Test
@@ -134,17 +134,6 @@ class MatrixExtensionsInstrumentedTest {
         s = m.getScaling(20f, 20f)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
-    }
-
-    @Test
-    fun testSetTranslation() {
-        val m = Matrix()
-        m.postScale(2f, 2f)
-        m.postRotate(30f)
-        m.postTranslate(10f, 20f)
-        val (tx, ty) = m.translation
-        Assert.assertEquals(10f, tx, 0.1f)
-        Assert.assertEquals(20f, ty, 0.1f)
     }
 
 }
