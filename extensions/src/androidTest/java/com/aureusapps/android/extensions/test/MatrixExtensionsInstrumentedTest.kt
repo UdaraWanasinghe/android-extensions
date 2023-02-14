@@ -139,7 +139,7 @@ class MatrixExtensionsInstrumentedTest {
     @Test
     fun testSetScalingS() {
         val m = Matrix()
-        m.postScale(2f, 2f)
+        m.setScaling(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
         val (sx, sy) = m.scaling
