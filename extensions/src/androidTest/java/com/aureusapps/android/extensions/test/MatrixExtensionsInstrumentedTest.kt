@@ -156,4 +156,14 @@ class MatrixExtensionsInstrumentedTest {
         Assert.assertEquals(2f, sy, 0.1f)
     }
 
+    @Test
+    fun testSetScalingSxSyPxPy() {
+        val m = Matrix()
+        m.postScale(3f, 2f, 10f, 12f)
+        MatrixUtils.setScaling(m, 4f, 1f, 10f, 12f)
+        val (sx, sy) = MatrixUtils.getScaling(m, 10f, 12f)
+        Assert.assertEquals(4f, sx, 0.1f)
+        Assert.assertEquals(1f, sy, 0.1f)
+    }
+
 }

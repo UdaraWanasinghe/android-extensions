@@ -242,8 +242,24 @@ object MatrixUtils {
         return sx to sy
     }
 
-    fun setScaling(matrix: Matrix, sx: Float, sy: Float, px: Float, py: Float): Float {
-        return 0f
+    /**
+     * Set scaling of transformed space relative to the given point on the original space.
+     *
+     * @param matrix Matrix to set scaling to.
+     * @param sx Scaling value in x direction.
+     * @param sy Scaling value in y direction.
+     * @param px X coordinate of the point.
+     * @param py Y coordinate of the point.
+     */
+    fun setScaling(matrix: Matrix, sx: Float, sy: Float, px: Float, py: Float) {
+        matrix.getValues(tempValues)
+        val a = tempValues[0] - px * tempValues[6]
+        val b = tempValues[1] - px * tempValues[7]
+        val d = tempValues[3] - py * tempValues[6]
+        val e = tempValues[4] - py * tempValues[7]
+        val csx = sqrt(a * a + d * d)
+        val csy = sqrt(b * b + e * e)
+        matrix.postScale(sx / csx, sy / csy, px, py)
     }
 
     fun decomposeComponents(matrix: Matrix): MatrixComponents {
