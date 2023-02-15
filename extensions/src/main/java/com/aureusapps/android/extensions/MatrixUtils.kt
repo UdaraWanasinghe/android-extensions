@@ -140,7 +140,8 @@ object MatrixUtils {
     }
 
     fun getRotation(matrix: Matrix, px: Float, py: Float): Float {
-        return 0f
+        matrix.getValues(tempValues)
+        return atan2(tempValues[3] - py * tempValues[6], tempValues[0] - px * tempValues[6]).toDegrees()
     }
 
     fun setRotation(matrix: Matrix, degrees: Float, px: Float, py: Float) {
