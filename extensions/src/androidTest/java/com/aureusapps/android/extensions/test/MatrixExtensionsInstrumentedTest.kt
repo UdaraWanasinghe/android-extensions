@@ -11,12 +11,12 @@ import org.junit.runner.RunWith
 class MatrixExtensionsInstrumentedTest {
 
     @Test
-    fun testGetTranslation() {
+    fun testGetTranslation00() {
         val m = Matrix()
         m.postScale(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        val (tx, ty) = m.translation
+        val (tx, ty) = MatrixUtils.getTranslation(m)
         Assert.assertEquals(10f, tx, 0.1f)
         Assert.assertEquals(20f, ty, 0.1f)
     }
@@ -26,8 +26,8 @@ class MatrixExtensionsInstrumentedTest {
         val m = Matrix()
         m.postScale(2f, 2f)
         m.postRotate(30f)
-        m.setTranslation(10f, 20f)
-        val (tx, ty) = m.translation
+        MatrixUtils.setTranslation(m, 10f, 20f)
+        val (tx, ty) = MatrixUtils.getTranslation(m)
         Assert.assertEquals(10f, tx, 0.1f)
         Assert.assertEquals(20f, ty, 0.1f)
     }
@@ -38,7 +38,7 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        val (tx, ty) = m.getTranslation(5f, 5f)
+        val (tx, ty) = MatrixUtils.getTranslation(m, 5f, 5f)
         Assert.assertEquals(8.66f, tx, 0.1f)
         Assert.assertEquals(28.66f, ty, 0.1f)
     }
@@ -49,23 +49,23 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        m.setTranslation(30f, 30f, 5f, 5f)
-        val (tx, ty) = m.getTranslation(5f, 5f)
+        MatrixUtils.setTranslation(m, 30f, 30f, 5f, 5f)
+        val (tx, ty) = MatrixUtils.getTranslation(m, 5f, 5f)
         Assert.assertEquals(30f, tx, 0.1f)
         Assert.assertEquals(30f, ty, 0.1f)
     }
 
     @Test
-    fun testGetRotation() {
+    fun testGetRotation00() {
         val m = Matrix()
         m.postScale(2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        Assert.assertEquals(30f, m.rotation, 0.1f)
+        Assert.assertEquals(30f, MatrixUtils.getRotation(m), 0.1f)
     }
 
     @Test
-    fun testSetRotationD() {
+    fun testSetRotationR00() {
         val m = Matrix()
         m.postScale(2f, 2f)
         m.setRotation(30f)
@@ -97,12 +97,12 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testSetRotationDPxPy() {
+    fun testSetRotationRPxPy() {
         val m = Matrix()
         m.postScale(2f, 2f)
-        m.setRotation(30f, 5f, 5f)
+        MatrixUtils.setRotation(m, 30f, 5f, 5f)
         m.postTranslate(10f, 10f)
-        Assert.assertEquals(30f, m.getRotation(5f, 5f))
+        Assert.assertEquals(30f, MatrixUtils.getRotation(m, 5f, 5f))
     }
 
     @Test

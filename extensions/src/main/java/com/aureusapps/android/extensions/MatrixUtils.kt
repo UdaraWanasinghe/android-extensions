@@ -16,16 +16,16 @@ object MatrixUtils {
     private val tempPoint = FloatArray(2)
 
     /**
-     * Returns translation or location of the origin point of transformed space relative to original space.
+     * Returns translation or location of the origin point of the transformed space relative to the original space.
      *
-     * @param matrix matrix to get translation.
-     * @return translation x and y values.
+     * @param matrix Matrix to get translation.
+     * @return Translation x and y values.
      *
-     * ⌈ A B C ⌉
+     * | A B C |
      *
      * | D E F |
      *
-     * ⌊ G H I ⌋
+     * | G H I |
      *
      * C(2) = tx
      *
@@ -38,17 +38,17 @@ object MatrixUtils {
     }
 
     /**
-     * Set translation or location of the origin point of transformed space relative to original space.
+     * Set translation or location of the origin point of the transformed space relative to the original space.
      *
-     * @param matrix matrix to set translation.
-     * @param tx translation x coordinate.
-     * @param ty translation y coordinate.
+     * @param matrix Matrix to set translation.
+     * @param tx Translation x coordinate.
+     * @param ty Translation y coordinate.
      *
-     * ⌈ A B C ⌉
+     * | A B C |
      *
      * | D E F |
      *
-     * ⌊ G H I ⌋
+     * | G H I |
      *
      * C(2) = tx
      *
@@ -62,7 +62,12 @@ object MatrixUtils {
     }
 
     /**
-     * Returns the translation of the given point.
+     * Returns the translation of the given point relative to it's location on the original space.
+     *
+     * @param matrix Matrix to get translation from.
+     * @param px X coordinate of the point on the original space.
+     * @param py Y coordinate of the point on the original space.
+     * @return Translation of the given point relative to it's location on the original space.
      */
     fun getTranslation(matrix: Matrix, px: Float, py: Float): Pair<Float, Float> {
         // find location of (px, py) on the transformed space.
@@ -74,7 +79,13 @@ object MatrixUtils {
     }
 
     /**
-     * Set translation of the given point relative to the point on original space.
+     * Set translation of the given point relative to it's location on the original space.
+     *
+     * @param matrix Matrix to set translation to.
+     * @param tx Translation x value.
+     * @param ty Translation y value.
+     * @param px X coordinate of the point.
+     * @param py Y coordinate of the point.
      */
     fun setTranslation(matrix: Matrix, tx: Float, ty: Float, px: Float, py: Float) {
         // get location of (px, py) on transformed space.
@@ -89,13 +100,16 @@ object MatrixUtils {
     }
 
     /**
-     * Get rotation of transformed space relative to (0, 0) point on original space.
+     * Returns rotation of transformed space relative to (0, 0) point on the original space.
      *
-     * ⌈ A B C ⌉
+     * @param matrix Matrix to get rotation from.
+     * @return Rotation of the transformed space.
+     *
+     * | A B C |
      *
      * | D E F |
      *
-     * ⌊ G H I ⌋
+     * | G H I |
      *
      * A(0) = sx ✕ cos(a)
      *
@@ -111,13 +125,16 @@ object MatrixUtils {
     }
 
     /**
-     * Set rotation of the transformed space relative to (0, 0) point on original space.
+     * Set rotation of the transformed space relative to (0, 0) point on the original space.
      *
-     * ⌈ A B C ⌉
+     * @param matrix Matrix to set rotation to.
+     * @param degrees Rotation to set.
+     *
+     * | A B C |
      *
      * | D E F |
      *
-     * ⌊ G H I ⌋
+     * | G H I |
      *
      * A(0) = sx ✕ cos(a)
      *
@@ -139,13 +156,31 @@ object MatrixUtils {
         matrix.setValues(tempValues)
     }
 
+    /**
+     * Returns rotation relative to the point (px, py) on the original space.
+     *
+     * @param matrix Matrix to get rotation from.
+     * @param px X coordinate of the point on the original space.
+     * @param py Y coordinate of the point on the original space.
+     * @return Rotation relative to the point (px, py) on the original space.
+     */
     fun getRotation(matrix: Matrix, px: Float, py: Float): Float {
         matrix.getValues(tempValues)
         return atan2(tempValues[3] - py * tempValues[6], tempValues[0] - px * tempValues[6]).toDegrees()
     }
 
+    /**
+     * Set rotation relative to the point (px, py) on the original space.
+     *
+     * @param matrix Matrix to set rotation to.
+     * @param degrees Rotation to set.
+     * @param px X coordinate of the point on the original space.
+     * @param py Y coordinate of the point on the original space.
+     */
     fun setRotation(matrix: Matrix, degrees: Float, px: Float, py: Float) {
-
+        matrix.getValues(tempValues)
+        val cr = atan2(tempValues[3] - py * tempValues[6], tempValues[0] - px * tempValues[6]).toDegrees()
+        matrix.postRotate(degrees - cr, px, py)
     }
 
     fun getScaling(matrix: Float): Pair<Float, Float> {
