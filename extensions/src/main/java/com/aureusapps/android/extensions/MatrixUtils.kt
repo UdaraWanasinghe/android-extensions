@@ -207,10 +207,20 @@ object MatrixUtils {
     }
 
     /**
+     * Set scaling of the matrix relative to (0, 0) point on the original space.
      *
+     * @param matrix Matrix to set scaling to.
+     * @param sx Scaling on the x direction.
+     * @param sy Scaling on the y direction.
      */
     fun setScaling(matrix: Matrix, sx: Float, sy: Float) {
-
+        matrix.getValues(tempValues)
+        val cr = atan2(tempValues[3], tempValues[0]).toDegrees()
+        tempValues[0] = sx * cos(cr)
+        tempValues[1] = -sy * sin(cr)
+        tempValues[3] = sx * sin(cr)
+        tempValues[4] = sy * cos(cr)
+        matrix.setValues(tempValues)
     }
 
     /**

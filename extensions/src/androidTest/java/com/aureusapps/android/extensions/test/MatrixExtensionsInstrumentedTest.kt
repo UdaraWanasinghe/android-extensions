@@ -22,7 +22,7 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testSetTranslationTxTy() {
+    fun testSetTranslationTxTy00() {
         val m = Matrix()
         m.postScale(2f, 2f)
         m.postRotate(30f)
@@ -68,7 +68,7 @@ class MatrixExtensionsInstrumentedTest {
     fun testSetRotationR00() {
         val m = Matrix()
         m.postScale(2f, 2f)
-        m.setRotation(30f)
+        MatrixUtils.setRotation(m, 30f)
         m.postTranslate(10f, 20f)
         Assert.assertEquals(30f, MatrixUtils.getRotation(m), 0.1f)
     }
@@ -106,7 +106,7 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testGetScaling() {
+    fun testGetScaling00() {
         // only scale
         val m = Matrix()
         m.postScale(2f, 2f)
@@ -137,13 +137,22 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testSetScalingS() {
+    fun testSetScalingS00() {
         val m = Matrix()
-        m.setScaling(2f, 2f)
+        MatrixUtils.setScaling(m, 2f, 2f)
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
-        val (sx, sy) = m.scaling
+        val (sx, sy) = MatrixUtils.getScaling(m)
         Assert.assertEquals(2f, sx, 0.1f)
+        Assert.assertEquals(2f, sy, 0.1f)
+    }
+
+    @Test
+    fun testGetScalingPxPy() {
+        val m = Matrix()
+        m.postScale(3f, 2f, 10f, 12f)
+        val (sx, sy) = MatrixUtils.getScaling(m, 10f, 12f)
+        Assert.assertEquals(3f, sx, 0.1f)
         Assert.assertEquals(2f, sy, 0.1f)
     }
 
