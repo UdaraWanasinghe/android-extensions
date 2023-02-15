@@ -184,13 +184,38 @@ class MatrixExtensionsInstrumentedTest {
     }
 
     @Test
-    fun testTestDecomposeComponentsPxPy() {
+    fun testDecomposeComponentsPxPy() {
         val m = Matrix()
         val px = 4f
         val py = 8f
         m.postScale(2f, 3f, px, py)
         m.postRotate(35f, px, py)
         MatrixUtils.setTranslation(m, 20f, 25f, px, py)
+        val c = MatrixUtils.decomposeComponents(m, px to py)
+        val (sx, sy) = c.scaling
+        val r = c.rotation
+        val (tx, ty) = c.translation
+        Assert.assertEquals(2f, sx, 0.1f)
+        Assert.assertEquals(3f, sy, 0.1f)
+        Assert.assertEquals(35f, r, 0.1f)
+        Assert.assertEquals(20f, tx, 0.1f)
+        Assert.assertEquals(25f, ty, 0.1f)
+    }
+
+    @Test
+    fun testCombineComponents() {
+        val m = Matrix()
+        val px = 4f
+        val py = 8f
+        MatrixUtils.combineComponents(
+            m,
+            MatrixComponents(
+                2f to 3f,
+                35f,
+                20f to 25f,
+                px to py
+            )
+        )
         val c = MatrixUtils.decomposeComponents(m, px to py)
         val (sx, sy) = c.scaling
         val r = c.rotation

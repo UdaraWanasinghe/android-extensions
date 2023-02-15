@@ -291,7 +291,14 @@ object MatrixUtils {
     }
 
     fun combineComponents(matrix: Matrix, components: MatrixComponents) {
-
+        matrix.reset()
+        val (sx, sy) = components.scaling
+        val r = components.rotation
+        val (tx, ty) = components.translation
+        val (px, py) = components.pivot
+        matrix.postScale(sx, sy, px, py)
+        matrix.postRotate(r, px, py)
+        setTranslation(matrix, tx, ty, px, py)
     }
 
 }
