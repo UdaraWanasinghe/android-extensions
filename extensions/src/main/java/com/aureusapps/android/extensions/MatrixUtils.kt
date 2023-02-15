@@ -263,11 +263,31 @@ object MatrixUtils {
     }
 
     fun decomposeComponents(matrix: Matrix): MatrixComponents {
-        return MatrixComponents(0f, 0f to 0f, 0f to 0f, 0f to 0f)
+        matrix.getValues(tempValues)
+        val sx = sqrt(tempValues[0] * tempValues[0] + tempValues[3] * tempValues[3])
+        val sy = sqrt(tempValues[1] * tempValues[1] + tempValues[4] * tempValues[4])
+        val r = atan2(tempValues[3], tempValues[0]).toDegrees()
+        val tx = tempValues[2]
+        val ty = tempValues[5]
+        return MatrixComponents(sx to sy, r, tx to ty, 0f to 0f)
     }
 
     fun decomposeComponents(matrix: Matrix, pivot: Pair<Float, Float>): MatrixComponents {
-        return MatrixComponents(0f, 0f to 0f, 0f to 0f, 0f to 0f)
+        matrix.getValues(tempValues)
+        val (px, py) = pivot
+        val a = tempValues[0] - px * tempValues[6]
+        val b = tempValues[1] - px * tempValues[7]
+        val d = tempValues[3] - py * tempValues[6]
+        val e = tempValues[4] - py * tempValues[7]
+        val sx = sqrt(a * a + d * d)
+        val sy = sqrt(b * b + e * e)
+        val r = atan2(tempValues[3] - py * tempValues[6], tempValues[0] - px * tempValues[6]).toDegrees()
+        tempPoint[0] = px
+        tempPoint[1] = py
+        matrix.mapPoints(tempPoint)
+        val tx = tempPoint[0] - px
+        val ty = tempPoint[1] - py
+        return MatrixComponents(sx to sy, r, tx to ty, px to py)
     }
 
     fun combineComponents(matrix: Matrix, components: MatrixComponents) {
