@@ -183,16 +183,53 @@ object MatrixUtils {
         matrix.postRotate(degrees - cr, px, py)
     }
 
-    fun getScaling(matrix: Float): Pair<Float, Float> {
-        return 0f to 0f
+    /**
+     * Get scaling of the matrix relative to (0, 0) point on the original space.
+     *
+     * @param matrix Matrix to get scaling from.
+     * @return Scaling on the x and y directions.
+     *
+     * | A B C |
+     *
+     * | D E F |
+     *
+     * | G H I |
+     *
+     * sx = sqrt(A^2+D^2)
+     *
+     * sy = sqrt(B^2+E^2)
+     */
+    fun getScaling(matrix: Matrix): Pair<Float, Float> {
+        matrix.getValues(tempValues)
+        val sx = sqrt(tempValues[0] * tempValues[0] + tempValues[3] * tempValues[3])
+        val sy = sqrt(tempValues[1] * tempValues[1] + tempValues[4] * tempValues[4])
+        return sx to sy
     }
 
+    /**
+     *
+     */
     fun setScaling(matrix: Matrix, sx: Float, sy: Float) {
 
     }
 
+    /**
+     * Returns scaling of the transformed space relative to point (px, py) on the original space.
+     *
+     * @param matrix Matrix to get scaling from.
+     * @param px X coordinate of the point on the original space.
+     * @param py Y coordinate of the point on the original space.
+     * @return Scaling relative to point (px, py) on the original space.
+     */
     fun getScaling(matrix: Matrix, px: Float, py: Float): Pair<Float, Float> {
-        return 0f to 0f
+        matrix.getValues(tempValues)
+        val a = tempValues[0] - px * tempValues[6]
+        val b = tempValues[1] - px * tempValues[7]
+        val d = tempValues[3] - py * tempValues[6]
+        val e = tempValues[4] - py * tempValues[7]
+        val sx = sqrt(a * a + d * d)
+        val sy = sqrt(b * b + e * e)
+        return sx to sy
     }
 
     fun setScaling(matrix: Matrix, sx: Float, sy: Float, px: Float, py: Float): Float {

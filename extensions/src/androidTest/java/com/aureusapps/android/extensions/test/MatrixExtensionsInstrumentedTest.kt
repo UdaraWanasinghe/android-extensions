@@ -110,20 +110,20 @@ class MatrixExtensionsInstrumentedTest {
         // only scale
         val m = Matrix()
         m.postScale(2f, 2f)
-        var s = m.scaling
+        var s = MatrixUtils.getScaling(m)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
         // scale around pivot
         m.reset()
         m.postScale(2f, 2f, 10f, 10f)
-        s = m.getScaling(10f, 10f)
+        s = MatrixUtils.getScaling(m, 10f, 10f)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
         // scale around pivot and rotate
         m.reset()
         m.postScale(2f, 2f, 10f, 10f)
         m.postRotate(45f, 10f, 10f)
-        s = m.getScaling(10f, 10f)
+        s = MatrixUtils.getScaling(m, 10f, 10f)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
         // scale around pivot, rotate and translate
@@ -131,7 +131,7 @@ class MatrixExtensionsInstrumentedTest {
         m.postScale(2f, 2f, 10f, 10f)
         m.postRotate(45f, 10f, 10f)
         m.postTranslate(10f, 10f)
-        s = m.getScaling(20f, 20f)
+        s = MatrixUtils.getScaling(m, 20f, 20f)
         Assert.assertEquals(2f, s.first, 0.00001f)
         Assert.assertEquals(2f, s.second, 0.00001f)
     }
