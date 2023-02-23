@@ -35,24 +35,6 @@ fun View.minimumSize(): Pair<Int, Int> {
     return measuredWidth to measuredHeight
 }
 
-inline fun <reified T : ViewModel> View.viewModels(): Lazy<T> {
-    return lazy {
-        val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
-            "View $this does not has a ViewModelStoreOwner set"
-        )
-        ViewModelProvider(storeOwner)[T::class.java]
-    }
-}
-
-inline fun <reified T : ViewModel> View.viewModels(factory: ViewModelProvider.Factory): Lazy<T> {
-    return lazy {
-        val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
-            "View $this does not has a ViewModelStoreOwner set"
-        )
-        ViewModelProvider(storeOwner, factory)[T::class.java]
-    }
-}
-
 inline fun <reified T : ViewModel> View.viewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
@@ -62,18 +44,23 @@ inline fun <reified T : ViewModel> View.viewModels(
     )
     val factory = factoryProducer?.invoke()
     val extras = extrasProducer?.invoke()
-    when {
+    return@lazy when {
         factory != null && extras != null -> {
-            return@lazy ViewModelProvider(storeOwner.viewModelStore, factory, extras)[T::class.java]
+            ViewModelProvider(storeOwner.viewModelStore, factory, extras)[T::class.java]
         }
         factory != null -> {
-            return@lazy ViewModelProvider(storeOwner, factory)[T::class.java]
+            ViewModelProvider(storeOwner, factory)[T::class.java]
         }
         else -> {
-            return@lazy ViewModelProvider(storeOwner)[T::class.java]
+            ViewModelProvider(storeOwner)[T::class.java]
         }
     }
 }
+
+inline fun <reified T : ViewModel> View.activityViewModels(
+    noinline extrasProducer: (() -> CreationExtras)? = null,
+    noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
+): Lazy<T> = context.activityViewModels(extrasProducer, factoryProducer)
 
 val View.lifecycleScope: LifecycleCoroutineScope
     get() {

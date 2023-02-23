@@ -20,6 +20,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.CreationExtras
 import com.google.android.material.R
 
 val Context.fragmentManager: FragmentManager?
@@ -95,9 +97,12 @@ fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): Int
 /**
  * Get the activity viewModels from the context.
  */
-inline fun <reified T : ViewModel> Context.viewModels(): Lazy<T> {
+inline fun <reified T : ViewModel> Context.activityViewModels(
+    noinline extrasProducer: (() -> CreationExtras)? = null,
+    noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
+): Lazy<T> {
     return when (this) {
-        is ComponentActivity -> viewModels()
+        is ComponentActivity -> viewModels(extrasProducer, factoryProducer)
         else -> throw IllegalStateException("Context is not an activity")
     }
 }
