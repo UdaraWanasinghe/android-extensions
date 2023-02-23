@@ -97,7 +97,7 @@ fun Context.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): Int
 /**
  * Get the activity viewModels from the context.
  */
-inline fun <reified T : ViewModel> Context.activityViewModels(
+inline fun <reified T : ViewModel> Context.viewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
 ): Lazy<T> {

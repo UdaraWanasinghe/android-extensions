@@ -60,7 +60,7 @@ inline fun <reified T : ViewModel> View.viewModels(
 inline fun <reified T : ViewModel> View.activityViewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
-): Lazy<T> = context.activityViewModels(extrasProducer, factoryProducer)
+): Lazy<T> = context.viewModels(extrasProducer, factoryProducer)
 
 val View.lifecycleScope: LifecycleCoroutineScope
     get() {
