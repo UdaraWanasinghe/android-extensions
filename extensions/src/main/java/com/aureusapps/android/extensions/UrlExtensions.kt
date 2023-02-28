@@ -52,6 +52,19 @@ suspend fun URL.readFile(context: Context, dstUri: Uri, client: OkHttpClient = h
     }
 }
 
+suspend fun URL.readFile(dstFile: String, client: OkHttpClient = httpClient) {
+    withContext(Dispatchers.IO) {
+        val response = sendNetworkRequest(client)
+        if (response.code == 200) {
+            val body = response.body ?: throw Exception(ERROR_EMPTY_RESPONSE)
+            val inputStream = body.byteStream()
+            inputStream.writeTo(dstFile)
+        } else {
+            throw IOException(ERROR_NETWORK_REQUEST_FAILED)
+        }
+    }
+}
+
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun URL.readString(client: OkHttpClient = httpClient): String {
     return with(Dispatchers.IO) {
