@@ -101,10 +101,9 @@ inline fun <reified T : ViewModel> Context.viewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
 ): Lazy<T> {
-    return when (this) {
-        is ComponentActivity -> viewModels(extrasProducer, factoryProducer)
-        else -> throw IllegalStateException("Context is not an activity")
-    }
+    val activity = componentActivity
+        ?: throw IllegalStateException("Context is not a component activity")
+    return activity.viewModels(extrasProducer, factoryProducer)
 }
 
 val Context.activity: Activity?
