@@ -84,7 +84,7 @@ fun Theme.resolveResourceIdAttribute(@AttrRes attr: Int, default: Int): Int {
     return TypedValue().let { typedValue ->
         if (resolveAttribute(attr, typedValue, true)) {
             typedValue.resourceId
-        }else {
+        } else {
             default
         }
     }
@@ -100,5 +100,6 @@ fun Theme.obtainAndroidThemeOverlayId(): Int {
     )
     val androidThemeId = a.getResourceId(0, 0)
     val appThemeId = a.getResourceId(1, 0)
+    a.recycle()
     return if (androidThemeId != 0) androidThemeId else appThemeId
 }
