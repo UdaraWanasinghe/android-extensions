@@ -9,21 +9,24 @@ import androidx.annotation.StyleRes
 import androidx.appcompat.view.ContextThemeWrapper
 import com.google.android.material.R
 
-class ContextBuilder(context: Context) {
+class ContextBuilder(private val context: Context) {
 
     companion object {
         private val ANDROID_THEME_OVERLAY_ATTRS = intArrayOf(android.R.attr.theme, R.attr.theme)
     }
 
     private var attrs: AttributeSet? = null
+    private var themedContext: ContextThemeWrapper? = null
 
-    private val themedContext = ContextThemeWrapper(
-        context,
-        context.resources.newTheme().apply {
-            // apply theme from the base context
-            setTo(context.theme)
-        }
-    )
+    private fun getThemedContext(): Context {
+        return themedContext ?: ContextThemeWrapper(
+            context,
+            context.resources.newTheme().apply {
+                // apply theme from the base context
+                setTo(context.theme)
+            }
+        ).also { themedContext = it }
+    }
 
     fun withAttrs(attrs: AttributeSet): ContextBuilder {
         this.attrs = attrs
@@ -38,9 +41,9 @@ class ContextBuilder(context: Context) {
         @StyleRes defStyleRes: Int
     ): ContextBuilder {
         val outValue = TypedValue()
-        if (!themedContext.theme.resolveAttribute(attrRes, outValue, false)) {
+        if (!(themedContext ?: context).theme.resolveAttribute(attrRes, outValue, false)) {
             // attribute is in the context
-            themedContext.theme.applyStyle(defStyleRes, true)
+            getThemedContext().theme.applyStyle(defStyleRes, true)
         }
         return this
     }
@@ -49,19 +52,20 @@ class ContextBuilder(context: Context) {
         @StyleRes styleRes: Int,
         force: Boolean = false
     ): ContextBuilder {
-        themedContext.theme.applyStyle(styleRes, force)
+        getThemedContext().theme.applyStyle(styleRes, force)
         return this
     }
 
     fun build(): Context {
-        // We want values set in android:theme or app:theme to always override values supplied.
-        attrs?.let { attrs ->
-            val androidThemeOverlayId = obtainAndroidThemeOverlayId(themedContext, attrs)
-            if (androidThemeOverlayId != 0) {
-                themedContext.theme.applyStyle(androidThemeOverlayId, true)
+        return themedContext?.also { themedContext ->
+            // We want values set in android:theme or app:theme to always override values supplied.
+            attrs?.let { attrs ->
+                val androidThemeOverlayId = obtainAndroidThemeOverlayId(themedContext, attrs)
+                if (androidThemeOverlayId != 0) {
+                    themedContext.theme.applyStyle(androidThemeOverlayId, true)
+                }
             }
-        }
-        return themedContext
+        } ?: context
     }
 
     @SuppressLint("ResourceType")
