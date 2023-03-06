@@ -28,7 +28,7 @@ class ContextBuilder(private val context: Context) {
         ).also { themedContext = it }
     }
 
-    fun withAttrs(attrs: AttributeSet): ContextBuilder {
+    fun withAttrs(attrs: AttributeSet?): ContextBuilder {
         this.attrs = attrs
         return this
     }
