@@ -33,21 +33,20 @@ android {
 
 dependencies {
 
-    implementation "androidx.core:core-ktx:$core_version"
-    implementation "androidx.appcompat:appcompat:$appcompat_version"
-    implementation "com.google.android.material:material:$material_version"
-    implementation "androidx.room:room-runtime:$room_version"
-    kapt "androidx.room:room-compiler:$room_version"
-    implementation "com.squareup.okhttp3:okhttp:$okhttp_version"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.activity:activity-ktx:$activity_version"
+    implementation libs.core.ktx
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.room.runtime
+    kapt libs.room.compiler
+    implementation libs.okhttp
+    implementation libs.activity.ktx
 
-    testImplementation "junit:junit:$junit_version"
+    testImplementation libs.junit
 
-    androidTestImplementation "androidx.test.ext:junit:$junit_ext_version"
-    androidTestImplementation "androidx.test.espresso:espresso-core:$espresso_version"
-    androidTestImplementation "androidx.room:room-runtime:$room_version"
-    kaptAndroidTest "androidx.room:room-compiler:$room_version"
+    androidTestImplementation libs.junit.ext
+    androidTestImplementation libs.espresso.core
+    androidTestImplementation libs.room.runtime
+    kaptAndroidTest libs.room.compiler
 }
 
 task androidSourcesJar(type: Jar) {

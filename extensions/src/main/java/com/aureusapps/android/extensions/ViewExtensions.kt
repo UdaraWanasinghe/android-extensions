@@ -39,7 +39,7 @@ inline fun <reified T : ViewModel> View.viewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
 ): Lazy<T> = lazy {
-    val storeOwner = ViewTreeViewModelStoreOwner.get(this) ?: throw IllegalStateException(
+    val storeOwner = findViewTreeViewModelStoreOwner() ?: throw IllegalStateException(
         "View $this does not has a ViewModelStoreOwner set"
     )
     val factory = factoryProducer?.invoke()
@@ -373,6 +373,11 @@ fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArr
     return context.resolveIntArray(attr, default)
 }
 
-fun View.obtainStyledAttributes(set: AttributeSet?, attrs: IntArray, defStyleAttr: Int = 0, defStyleRes: Int = 0): TypedArray {
+fun View.obtainStyledAttributes(
+    set: AttributeSet?,
+    attrs: IntArray,
+    defStyleAttr: Int = 0,
+    defStyleRes: Int = 0
+): TypedArray {
     return context.theme.obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
 }
