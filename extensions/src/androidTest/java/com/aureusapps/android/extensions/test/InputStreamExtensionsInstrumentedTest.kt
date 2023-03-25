@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.writeTo
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,7 +16,7 @@ import java.io.FileReader
 class InputStreamExtensionsInstrumentedTest {
 
     @Test
-    fun testWriteTo() {
+    fun testWriteTo() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val inputStream = javaClass.classLoader?.getResourceAsStream("test.txt")
         val file = File(context.cacheDir, "test.txt")
