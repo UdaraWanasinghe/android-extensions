@@ -5,6 +5,12 @@ plugins {
     id 'kotlin-kapt'
 }
 
+ext {
+    PUBLISH_GROUP_ID = 'com.aureusapps.android'
+    PUBLISH_VERSION = version_name
+    PUBLISH_ARTIFACT_ID = 'extensions'
+}
+
 android {
     compileSdk 33
 
@@ -32,7 +38,6 @@ android {
 }
 
 dependencies {
-
     implementation libs.core.ktx
     implementation libs.appcompat
     implementation libs.material
@@ -49,21 +54,4 @@ dependencies {
     kaptAndroidTest libs.room.compiler
 }
 
-task androidSourcesJar(type: Jar) {
-    archiveClassifier.set('sources')
-    from android.sourceSets.main.java.srcDirs
-}
-
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                artifact androidSourcesJar
-                groupId = 'com.aureusapps.android'
-                artifactId = 'extensions'
-                version = version_name
-            }
-        }
-    }
-}
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
