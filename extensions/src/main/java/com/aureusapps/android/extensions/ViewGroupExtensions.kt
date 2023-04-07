@@ -51,12 +51,12 @@ fun ViewGroup.generateLayoutParams(
     )
 }
 
-fun ViewGroup.addView(block: (ViewGroup) -> View): ViewGroup {
+inline fun <T : ViewGroup> T.addView(block: (T) -> View): T {
     addView(block(this))
     return this
 }
 
-fun <T> ViewGroup.addViews(list: List<T>, block: (ViewGroup, T) -> View): ViewGroup {
+inline fun <T : View, V : ViewGroup> V.addViews(list: List<T>, block: (V, T) -> View): V {
     list.forEach {
         val child = block(this, it)
         addView(child)
@@ -64,7 +64,7 @@ fun <T> ViewGroup.addViews(list: List<T>, block: (ViewGroup, T) -> View): ViewGr
     return this
 }
 
-fun ViewGroup.addView(predicate: Boolean, block: (ViewGroup) -> View): ViewGroup {
+inline fun <T : ViewGroup> T.addView(predicate: Boolean, block: (T) -> View): T {
     if (predicate) {
         return addView(block)
     }
