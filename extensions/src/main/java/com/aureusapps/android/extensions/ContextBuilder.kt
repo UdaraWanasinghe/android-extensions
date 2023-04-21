@@ -17,8 +17,9 @@ class ContextBuilder(private val context: Context) {
 
     private var attrs: AttributeSet? = null
     private var themedContext: ContextThemeWrapper? = null
+    private val targetContext get() = themedContext ?: context
 
-    private fun getThemedContext(): Context {
+    private fun getOrCreateThemedContext(): Context {
         return themedContext ?: ContextThemeWrapper(
             context,
             context.resources.newTheme().apply {
@@ -41,9 +42,23 @@ class ContextBuilder(private val context: Context) {
         @StyleRes defStyleRes: Int
     ): ContextBuilder {
         val outValue = TypedValue()
-        if (!(themedContext ?: context).theme.resolveAttribute(attrRes, outValue, false)) {
-            // attribute is in the context
-            getThemedContext().theme.applyStyle(defStyleRes, true)
+        if (!targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
+            // attribute is not in the context
+            getOrCreateThemedContext().theme.applyStyle(defStyleRes, true)
+        }
+        return this
+    }
+
+    fun applyStyle(
+        @AttrRes attrRes: Int,
+        @StyleRes defStyleRes: Int,
+        force: Boolean = false
+    ): ContextBuilder {
+        val outValue = TypedValue()
+        if (targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
+            getOrCreateThemedContext().theme.applyStyle(outValue.resourceId, force)
+        } else {
+            getOrCreateThemedContext().theme.applyStyle(defStyleRes, force)
         }
         return this
     }
@@ -52,7 +67,7 @@ class ContextBuilder(private val context: Context) {
         @StyleRes styleRes: Int,
         force: Boolean = false
     ): ContextBuilder {
-        getThemedContext().theme.applyStyle(styleRes, force)
+        getOrCreateThemedContext().theme.applyStyle(styleRes, force)
         return this
     }
 
