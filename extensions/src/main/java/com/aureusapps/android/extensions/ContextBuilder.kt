@@ -56,7 +56,7 @@ class ContextBuilder(private val context: Context) {
     ): ContextBuilder {
         val outValue = TypedValue()
         if (targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
-            getOrCreateThemedContext().theme.applyStyle(outValue.resourceId, force)
+            getOrCreateThemedContext().theme.applyStyle(outValue.data, force)
         } else {
             getOrCreateThemedContext().theme.applyStyle(defStyleRes, force)
         }
