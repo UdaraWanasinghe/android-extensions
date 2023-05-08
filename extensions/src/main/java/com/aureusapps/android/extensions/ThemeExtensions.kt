@@ -90,6 +90,16 @@ fun Theme.resolveResourceIdAttribute(@AttrRes attr: Int, default: Int): Int {
     }
 }
 
+fun Theme.resolveBooleanAttribute(@AttrRes attr: Int, default: Boolean = false): Boolean {
+    return TypedValue().let { typedValue ->
+        if (resolveAttribute(attr, typedValue, true)) {
+            typedValue.data != 0
+        } else {
+            default
+        }
+    }
+}
+
 @SuppressLint("ResourceType")
 fun Theme.obtainAndroidThemeOverlayId(): Int {
     val a = obtainStyledAttributes(

@@ -15,7 +15,13 @@ import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.core.content.res.ResourcesCompat
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.lifecycle.findViewTreeViewModelStoreOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.CreationExtras
 
 fun View.dismissKeyboard() {
@@ -48,9 +54,11 @@ inline fun <reified T : ViewModel> View.viewModels(
         factory != null && extras != null -> {
             ViewModelProvider(storeOwner.viewModelStore, factory, extras)[T::class.java]
         }
+
         factory != null -> {
             ViewModelProvider(storeOwner, factory)[T::class.java]
         }
+
         else -> {
             ViewModelProvider(storeOwner)[T::class.java]
         }
@@ -161,6 +169,10 @@ fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): I
     return theme.resolvePixelDimensionAttribute(attr, default)
 }
 
+fun View.resolveBooleanAttribute(@AttrRes attr: Int, default: Boolean = false): Boolean {
+    return theme.resolveBooleanAttribute(attr, default)
+}
+
 var View.horizontalMargin: Int
     get() {
         val lp = layoutParams
@@ -176,12 +188,14 @@ var View.horizontalMargin: Int
                 lp.rightMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.leftMargin = value
                 newLp.rightMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.leftMargin = value
@@ -206,12 +220,14 @@ var View.verticalMargin: Int
                 lp.bottomMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.topMargin = value
                 newLp.bottomMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.topMargin = value
@@ -235,11 +251,13 @@ var View.marginLeft: Int
                 lp.leftMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.leftMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.leftMargin = value
@@ -262,11 +280,13 @@ var View.marginRight: Int
                 lp.rightMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.rightMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.rightMargin = value
@@ -289,11 +309,13 @@ var View.marginTop: Int
                 lp.topMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.topMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.topMargin = value
@@ -316,11 +338,13 @@ var View.marginBottom: Int
                 lp.bottomMargin = value
                 layoutParams = lp
             }
+
             null -> {
                 val newLp = MarginLayoutParams(WRAP_CONTENT, WRAP_CONTENT)
                 newLp.bottomMargin = value
                 layoutParams = newLp
             }
+
             else -> {
                 val newLp = MarginLayoutParams(lp)
                 newLp.bottomMargin = value

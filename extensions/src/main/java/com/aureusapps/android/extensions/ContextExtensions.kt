@@ -211,6 +211,10 @@ fun Context.resolveResourceIdAttribute(@AttrRes attr: Int, default: Int): Int {
     }
 }
 
+fun Context.resolveBooleanAttribute(@AttrRes attr: Int, default: Boolean = false): Boolean {
+    return theme.resolveBooleanAttribute(attr, default)
+}
+
 @SuppressLint("ResourceType")
 fun Context.obtainAndroidThemeOverlayId(): Int {
     val a = obtainStyledAttributes(
