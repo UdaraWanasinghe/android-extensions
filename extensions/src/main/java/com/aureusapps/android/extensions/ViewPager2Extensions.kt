@@ -4,7 +4,10 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 
 var ViewPager2.edgeEffectFactory: RecyclerView.EdgeEffectFactory
-    get() = (getChildAt(0) as RecyclerView).edgeEffectFactory
+    get() = recyclerView.edgeEffectFactory
     set(value) {
-        (getChildAt(0) as RecyclerView).edgeEffectFactory = value
+        recyclerView.edgeEffectFactory = value
     }
+
+val ViewPager2.recyclerView: RecyclerView
+    get() = getChildAt(0) as RecyclerView
