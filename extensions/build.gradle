@@ -52,6 +52,8 @@ dependencies {
     androidTestImplementation libs.espresso.core
     androidTestImplementation libs.room.runtime
     kaptAndroidTest libs.room.compiler
+    androidTestImplementation libs.okhttp
+    androidTestImplementation libs.okhttp.mockwebserver
 }
 
 apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

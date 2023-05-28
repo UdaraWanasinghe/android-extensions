@@ -27,7 +27,8 @@ suspend fun Uri.saveTo(context: Context, savePath: String) {
                 outputStream.close()
             }
 
-            "https" -> {
+            "https",
+            "http" -> {
                 downloadTo(savePath)
             }
 
@@ -81,7 +82,7 @@ suspend fun Uri.downloadTo(savePath: String) {
         var outputStream: BufferedOutputStream? = null
 
         try {
-            val url = toString()
+            val url = this@downloadTo.toString()
             val fileUrl = URL(url)
             connection = fileUrl.openConnection() as HttpURLConnection
             connection.connect()

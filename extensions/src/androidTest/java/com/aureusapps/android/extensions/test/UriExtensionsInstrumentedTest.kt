@@ -9,7 +9,10 @@ import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.saveTo
+import com.squareup.okhttp.mockwebserver.MockResponse
+import com.squareup.okhttp.mockwebserver.MockWebServer
 import kotlinx.coroutines.runBlocking
+import okio.Buffer
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -75,6 +78,26 @@ class UriExtensionsInstrumentedTest {
             val resourceUri = Uri.parse("$scheme://$packageName/$typeName/$entryName")
             resourceUri.saveTo(context, cacheFile.absolutePath)
             verifyCacheFileContent()
+        }
+    }
+
+    @Test
+    fun test_saveHttpUriToPath() {
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            val buffer = Buffer()
+            buffer.write(fileContent.toByteArray())
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(buffer)
+            )
+            val contentUrl = server.url("/$fileName").toString()
+            val httpUri = Uri.parse(contentUrl)
+            httpUri.saveTo(context, cacheFile.absolutePath)
+            verifyCacheFileContent()
+            server.shutdown()
         }
     }
 
