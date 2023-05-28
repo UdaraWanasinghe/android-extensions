@@ -8,6 +8,7 @@ import org.junit.runners.Suite
     UrlExtensionsInstrumentedTest::class,
     RoomDatabaseExtensionsInstrumentedTest::class,
     InputStreamExtensionsInstrumentedTest::class,
-    AttributeSetExtensionsInstrumentedTest::class
+    AttributeSetExtensionsInstrumentedTest::class,
+    UriExtensionsInstrumentedTest::class
 )
 class ExtensionsInstrumentedTests
