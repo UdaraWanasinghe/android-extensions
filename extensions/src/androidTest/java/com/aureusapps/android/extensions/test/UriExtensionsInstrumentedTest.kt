@@ -8,6 +8,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.saveTo
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
@@ -70,15 +71,19 @@ class UriExtensionsInstrumentedTest {
     @Test
     fun test_saveAndroidResourceUriToPath() {
         runBlocking {
-            val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
-            val resId = R.raw.sample_text
-            val packageName = context.resources.getResourcePackageName(resId)
-            val typeName = context.resources.getResourceTypeName(resId)
-            val entryName = context.resources.getResourceEntryName(resId)
-            val resourceUri = Uri.parse("$scheme://$packageName/$typeName/$entryName")
+            val resourceUri = getAndroidResourceUri()
             resourceUri.saveTo(context, cacheFile.absolutePath)
             verifyCacheFileContent()
         }
+    }
+
+    private fun getAndroidResourceUri(): Uri {
+        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
+        val resId = R.raw.sample_text
+        val packageName = context.resources.getResourcePackageName(resId)
+        val typeName = context.resources.getResourceTypeName(resId)
+        val entryName = context.resources.getResourceEntryName(resId)
+        return Uri.parse("$scheme://$packageName/$typeName/$entryName")
     }
 
     @Test
@@ -102,8 +107,34 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_getFileName() {
+    fun test_getContentProviderUriFileName() {
+        val textFileUri = createTextFileInContentProvider()
+        val resultFileName = textFileUri.fileName(context)
+        Assert.assertEquals(fileName, resultFileName)
+    }
 
+    @Test
+    fun test_getFileUriFileName() {
+        createTextFileInExternalStorage()
+        val resultFileName = Uri.fromFile(textFile).fileName(context)
+        Assert.assertEquals(fileName, resultFileName)
+    }
+
+    @Test
+    fun test_getAndroidUriFileName() {
+        val resourceUri = getAndroidResourceUri()
+        val resultFileName = resourceUri.fileName(context)
+        Assert.assertEquals("sample_text", resultFileName)
+    }
+
+    @Test
+    fun test_getHttpUriFileName() {
+        val httpUri1 = Uri.parse("http://localhost:4648/sample_text.txt")
+        val resultFileName1 = httpUri1.fileName(context)
+        Assert.assertEquals(fileName, resultFileName1)
+        val httpUri2 = Uri.parse("http://localhost:4648/sample_text.txt?param1=s&param2=q")
+        val resultFileName2 = httpUri2.fileName(context)
+        Assert.assertEquals(fileName, resultFileName2)
     }
 
     /**

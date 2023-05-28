@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
+import android.text.TextUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
@@ -57,8 +58,12 @@ fun Uri.fileName(context: Context): String? {
         }
 
         ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-            val resourceId = lastPathSegment
-            fileName = context.resources.getResourceEntryName(resourceId!!.toInt())
+            val lastSegment = lastPathSegment
+            fileName = if (lastSegment != null && TextUtils.isDigitsOnly(lastSegment)) {
+                context.resources.getResourceEntryName(lastSegment.toInt())
+            } else {
+                lastSegment
+            }
         }
 
         ContentResolver.SCHEME_FILE -> {
@@ -66,7 +71,8 @@ fun Uri.fileName(context: Context): String? {
             fileName = path?.substringAfterLast("/")
         }
 
-        "https" -> {
+        "https",
+        "http" -> {
             val path = path
             val lastPathSegment = path?.substringAfterLast("/")
             fileName = lastPathSegment?.substringBefore("?")
