@@ -116,12 +116,14 @@ object BitmapUtils {
             when (format) {
                 Bitmap.CompressFormat.PNG -> "image/png"
                 Bitmap.CompressFormat.JPEG -> "image/jpeg"
-                Bitmap.CompressFormat.WEBP,
                 Bitmap.CompressFormat.WEBP_LOSSY,
                 Bitmap.CompressFormat.WEBP_LOSSLESS -> "image/webp"
+
+                else -> throw IllegalArgumentException("Unknown compress format")
             }
 
         } else {
+            @Suppress("DEPRECATION")
             when (format) {
                 Bitmap.CompressFormat.PNG -> "image/png"
                 Bitmap.CompressFormat.JPEG -> "image/jpeg"
