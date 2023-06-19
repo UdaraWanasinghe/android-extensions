@@ -171,3 +171,34 @@ fun Uri.createFile(
     }
     return fileUri
 }
+
+/**
+ * Returns files contained in the directory represented by this uri.
+ *
+ * @param context The Android context.
+ *
+ * @return A list of files contained in the directory represented by this uri
+ * or null if the given uri does not represent directory.
+ */
+fun Uri.listFiles(context: Context): List<Uri>? {
+    var uris: List<Uri>? = null
+    when {
+        isFileUri -> {
+            val path = path
+            if (path != null) {
+                val file = File(path)
+                if (file.isDirectory) {
+                    uris = file.listFiles()?.map { it.toUri() }
+                }
+            }
+        }
+
+        isTreeUri -> {
+            val documentFile = DocumentFile.fromTreeUri(context, this)
+            if (documentFile != null) {
+                uris = documentFile.listFiles().map { it.uri }
+            }
+        }
+    }
+    return uris
+}
