@@ -5,10 +5,13 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.text.TextUtils
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -114,4 +117,57 @@ suspend fun Uri.downloadTo(savePath: String) {
             outputStream?.close()
         }
     }
+}
+
+/**
+ * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
+ */
+val Uri.isTreeUri: Boolean
+    get() {
+        val paths = pathSegments
+        return paths.size >= 2 && "tree" == paths[0]
+    }
+
+/**
+ * Returns true if the uri is a file uri, otherwise false.
+ */
+val Uri.isFileUri: Boolean
+    get() = scheme == ContentResolver.SCHEME_FILE
+
+/**
+ * Creates a new file inside the directory given by uri.
+ * File uris and document tree uris are supported.
+ *
+ * @param context The Android context.
+ * @param displayName The name of the new file.
+ * @param mimeType The mime type of the new file.
+ *
+ * @return Uri of the newly created file or null if the file creation failed.
+ */
+fun Uri.createFile(
+    context: Context,
+    displayName: String,
+    mimeType: String
+): Uri? {
+    var fileUri: Uri? = null
+    when {
+        isFileUri -> {
+            val path = path
+            if (path != null) {
+                val file = File(path)
+                if (file.isDirectory) {
+                    fileUri = File(file, displayName).toUri()
+                }
+            }
+
+        }
+
+        isTreeUri -> {
+            fileUri = DocumentFile
+                .fromTreeUri(context, this)
+                ?.createFile(mimeType, displayName)
+                ?.uri
+        }
+    }
+    return fileUri
 }
