@@ -202,3 +202,32 @@ fun Uri.listFiles(context: Context): List<Uri>? {
     }
     return uris
 }
+
+/**
+ * Returned whether file with the given filename exists in the directory represented by given uri.
+ *
+ * @param context The Android context object.
+ * @param filename The name of the file to match.
+ *
+ * @return true if file exists, otherwise false.
+ */
+fun Uri.fileExists(context: Context, filename: String): Boolean {
+    var has = false
+    when {
+        isFileUri -> {
+            val path = path
+            if (path != null) {
+                val file = File(path, filename)
+                has = file.exists()
+            }
+        }
+
+        isTreeUri -> {
+            val documentFile = DocumentFile.fromTreeUri(context, this)
+            if (documentFile != null) {
+                has = documentFile.listFiles().any { it.name == filename }
+            }
+        }
+    }
+    return has
+}
