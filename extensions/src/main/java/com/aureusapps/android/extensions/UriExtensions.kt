@@ -212,22 +212,26 @@ fun Uri.listFiles(context: Context): List<Uri>? {
  * @return true if file exists, otherwise false.
  */
 fun Uri.fileExists(context: Context, filename: String): Boolean {
-    var has = false
+    var exists = false
     when {
         isFileUri -> {
             val path = path
             if (path != null) {
                 val file = File(path, filename)
-                has = file.exists()
+                exists = file.exists()
             }
         }
 
         isTreeUri -> {
             val documentFile = DocumentFile.fromTreeUri(context, this)
             if (documentFile != null) {
-                has = documentFile.listFiles().any { it.name == filename }
+                exists = documentFile.listFiles().any { it.name == filename }
             }
         }
+
+        else -> {
+            throw IllegalArgumentException("The given Uri does not represent a directory.")
+        }
     }
-    return has
+    return exists
 }
