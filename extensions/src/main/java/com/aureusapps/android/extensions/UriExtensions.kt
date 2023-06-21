@@ -159,7 +159,6 @@ fun Uri.createFile(
                     fileUri = File(file, displayName).toUri()
                 }
             }
-
         }
 
         isTreeUri -> {
@@ -173,65 +172,69 @@ fun Uri.createFile(
 }
 
 /**
- * Returns files contained in the directory represented by this uri.
+ * Returns files contained in the directory represented by this Uri.
  *
  * @param context The Android context.
  *
- * @return A list of files contained in the directory represented by this uri
- * or null if the given uri does not represent directory.
+ * @return A list of files contained in the directory represented by this Uri
+ * or null if error occurred.
  */
 fun Uri.listFiles(context: Context): List<Uri>? {
-    var uris: List<Uri>? = null
+    var uriList: List<Uri>? = null
     when {
         isFileUri -> {
             val path = path
             if (path != null) {
                 val file = File(path)
                 if (file.isDirectory) {
-                    uris = file.listFiles()?.map { it.toUri() }
+                    uriList = file
+                        .listFiles()
+                        ?.map { it.toUri() }
                 }
             }
         }
 
         isTreeUri -> {
-            val documentFile = DocumentFile.fromTreeUri(context, this)
-            if (documentFile != null) {
-                uris = documentFile.listFiles().map { it.uri }
+            val file = DocumentFile.fromTreeUri(context, this)
+            if (file != null) {
+                uriList = file
+                    .listFiles()
+                    .map { it.uri }
             }
         }
     }
-    return uris
+    return uriList
 }
 
 /**
- * Returned whether file with the given filename exists in the directory represented by given uri.
+ * Returned whether file with the given name exists in the directory represented by the given Uri.
  *
  * @param context The Android context object.
- * @param filename The name of the file to match.
+ * @param fileName The name of the file to match.
  *
- * @return true if file exists, otherwise false.
+ * @return 1 if file exists, 0 if file does not exist or -1 if error.
  */
-fun Uri.fileExists(context: Context, filename: String): Boolean {
-    var exists = false
+fun Uri.fileExists(context: Context, fileName: String): Int {
+    var status = -1
     when {
         isFileUri -> {
             val path = path
             if (path != null) {
-                val file = File(path, filename)
-                exists = file.exists()
+                val parent = File(path)
+                if (parent.isDirectory) {
+                    val file = File(parent, fileName)
+                    status = if (file.exists()) 1 else 0
+                }
             }
         }
 
         isTreeUri -> {
-            val documentFile = DocumentFile.fromTreeUri(context, this)
-            if (documentFile != null) {
-                exists = documentFile.listFiles().any { it.name == filename }
+            val file = DocumentFile.fromTreeUri(context, this)
+            if (file != null) {
+                val exists = file.listFiles().any { it.name == fileName }
+                status = if (exists) 1 else 0
             }
         }
-
-        else -> {
-            throw IllegalArgumentException("The given Uri does not represent a directory.")
-        }
     }
-    return exists
+    return status
 }
