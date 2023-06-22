@@ -19,6 +19,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.ByteBuffer
 
 suspend fun Uri.saveTo(context: Context, savePath: String) {
     withContext(Dispatchers.IO) {
@@ -291,4 +292,19 @@ fun Uri.readBytes(context: Context): ByteArray? {
     }
 
     return buffer
+}
+
+/**
+ * Reads the contents of the Uri to a ByteBuffer.
+ *
+ * @param context The context used to access the content resolver.
+ *
+ * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
+ */
+fun Uri.readBytesToBufer(context: Context): ByteBuffer? {
+    return readBytes(context)?.let {
+        val buffer = ByteBuffer.allocateDirect(it.size)
+        buffer.put(it)
+        return buffer
+    }
 }
