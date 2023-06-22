@@ -9,11 +9,14 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -237,4 +240,55 @@ fun Uri.fileExists(context: Context, fileName: String): Int {
         }
     }
     return status
+}
+
+/**
+ * Reads the contents of the Uri to a byte array.
+ *
+ * @param context The context used to access the content resolver.
+ *
+ * @return A byte array containing the contents of the Uri, or null if the operation fails.
+ */
+fun Uri.readBytes(context: Context): ByteArray? {
+    var inputStream: InputStream? = null
+    var buffer: ByteArray? = null
+
+    try {
+        when (scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE,
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                inputStream = context.contentResolver.openInputStream(this)
+            }
+
+            "http",
+            "https" -> {
+                val request = Request.Builder()
+                    .url(this.toString())
+                    .build()
+                val client = OkHttpClient
+                    .Builder()
+                    .build()
+                val response = client
+                    .newCall(request)
+                    .execute()
+                val body = response.body
+                if (body != null) {
+                    if (response.code == 200) {
+                        inputStream = body.byteStream()
+                    } else {
+                        response.close()
+                    }
+                }
+            }
+        }
+        if (inputStream != null) {
+            buffer = inputStream.readBytes()
+        }
+
+    } finally {
+        inputStream?.close()
+    }
+
+    return buffer
 }
