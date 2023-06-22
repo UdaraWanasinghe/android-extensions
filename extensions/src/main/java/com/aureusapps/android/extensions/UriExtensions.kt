@@ -301,7 +301,7 @@ fun Uri.readBytes(context: Context): ByteArray? {
  *
  * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
  */
-fun Uri.readBytesToBufer(context: Context): ByteBuffer? {
+fun Uri.readBytesToBuffer(context: Context): ByteBuffer? {
     return readBytes(context)?.let {
         val buffer = ByteBuffer.allocateDirect(it.size)
         buffer.put(it)
