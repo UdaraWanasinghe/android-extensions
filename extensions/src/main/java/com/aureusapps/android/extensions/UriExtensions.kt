@@ -20,6 +20,7 @@ import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 suspend fun Uri.saveTo(context: Context, savePath: String) {
     withContext(Dispatchers.IO) {
@@ -303,8 +304,9 @@ fun Uri.readBytes(context: Context): ByteArray? {
  */
 fun Uri.readBytesToBuffer(context: Context): ByteBuffer? {
     return readBytes(context)?.let {
-        val buffer = ByteBuffer.allocateDirect(it.size)
-        buffer.put(it)
-        return buffer
+        return ByteBuffer
+            .allocateDirect(it.size)
+            .order(ByteOrder.nativeOrder())
+            .put(it)
     }
 }
