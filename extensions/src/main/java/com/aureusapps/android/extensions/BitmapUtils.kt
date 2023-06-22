@@ -25,6 +25,8 @@ object BitmapUtils {
     @JvmStatic
     fun decodeUri(context: Context, uri: Uri): Bitmap? {
         var inputStream: InputStream? = null
+        var bitmap: Bitmap? = null
+
         try {
             when (uri.scheme) {
                 ContentResolver.SCHEME_CONTENT,
@@ -54,15 +56,19 @@ object BitmapUtils {
                     }
                 }
             }
-            return if (inputStream != null) {
+            bitmap = if (inputStream != null) {
                 BitmapFactory.decodeStream(inputStream)
             } else {
                 null
             }
 
+        } catch (_: Exception) {
+
         } finally {
             inputStream?.close()
         }
+
+        return bitmap
     }
 
     /**
