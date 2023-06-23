@@ -20,7 +20,7 @@ jobs:
       - name: Check out version-catalog
         uses: actions/checkout@v3
         with:
-          repository: UdaraWanasinghe/android-version-catalog
+          repository: android-version-catalog
           path: version-catalog
           fetch-depth: 1
 
