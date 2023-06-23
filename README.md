@@ -1,36 +1,19 @@
 ## Android Extensions
-[![android library](https://img.shields.io/badge/version-v1.0.0-orange)](https://github.com/UdaraWanasinghe/android-extensions)
 
-This is a collection of useful extensions for Android development.
+[![Publish](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml/badge.svg)](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/android-extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/android-extensions/1.0.0)
 
-
-
-## Building
-This project uses Gradle as its build system. To build this project, run `gradlew publishToMavenLocal` command on the root of the project.
-
-
+Collection of useful extensions for Android development.
 
 ## Using
 
-To use this library in your project, add the `mavenLocal` repository to your project's `settings.gradle` file.
-
-```groovy
-dependencyResolutionManagement {
-    repositories {
-        mavenLocal()
-    }
-}
-```
-
-Then add the following dependency to your project's `build.gradle` file.
+Add the following dependency to your project's `build.gradle` file.
 
 ```groovy
 dependencies {
     implementation 'com.aureusapps.android:extensions:1.0.0'
 }
 ```
-
-
 
 ## Appreciate my work!
 
