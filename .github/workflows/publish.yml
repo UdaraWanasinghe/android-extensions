@@ -20,6 +20,7 @@ jobs:
       - name: Check out version-catalog
         uses: actions/checkout@v3
         with:
+          ssh-key: ${{ secrets.VERSION_CATALOG_ACCESS_KEY }}
           repository: android-version-catalog
           path: version-catalog
           fetch-depth: 1
