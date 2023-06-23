@@ -20,16 +20,14 @@ jobs:
       - name: Check out version-catalog
         uses: actions/checkout@v3
         with:
-          repository: android-version-catalog
+          repository: UdaraWanasinghe/android-version-catalog
           token: ${{ secrets.VERSION_CATALOG_ACCESS_TOKEN }}
           path: version-catalog
-          fetch-depth: 1
 
       - name: Check out android-extensions
         uses: actions/checkout@v3
         with:
           path: android-extensions
-          fetch-depth: 1
 
       - name: Publish version-catalog
         working-directory: version-catalog
