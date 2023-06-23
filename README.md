@@ -3,7 +3,7 @@
 [![Publish](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml/badge.svg)](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/android-extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/android-extensions/1.0.0)
 
-Collection of useful extensions for Android development.
+Useful extension functions and utility classes for android development.
 
 ## Using
 
