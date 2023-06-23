@@ -1,7 +1,7 @@
 ## Android Extensions
 
 [![Publish](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml/badge.svg)](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/android-extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/android-extensions/1.0.0)
+[![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/extensions/1.0.0)
 [![javadoc](https://javadoc.io/badge2/com.aureusapps.android/extensions/javadoc.svg)](https://javadoc.io/doc/com.aureusapps.android/extensions)
 
 Useful extension functions and utility classes for android development.
