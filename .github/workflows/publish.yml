@@ -18,9 +18,11 @@ jobs:
           java-version: 17
 
       - name: Check out version-catalog
-        run: |
-          git clone https://${{ github.actor }}:${{ secrets.VERSION_CATALOG_ACCESS_TOKEN }}@github.com/UdaraWanasinghe/android-version-catalog $GITHUB_WORKSPACE/version-catalog
-        shell: bash
+        uses: actions/checkout@v3
+        with:
+          repository: UdaraWanasinghe/android-version-catalog
+          token: ${{ secrets.VERSION_CATALOG_ACCESS_TOKEN }}
+          path: version-catalog
 
       - name: Check out android-extensions
         uses: actions/checkout@v3
