@@ -217,73 +217,6 @@ fun Uri.fileExists(context: Context, fileName: String): Int {
 }
 
 /**
- * Reads the contents of the Uri to a byte array.
- *
- * @param context The context used to access the content resolver.
- *
- * @return A byte array containing the contents of the Uri, or null if the operation fails.
- */
-fun Uri.readBytes(context: Context): ByteArray? {
-    var inputStream: InputStream? = null
-
-    try {
-        when (scheme) {
-            ContentResolver.SCHEME_CONTENT,
-            ContentResolver.SCHEME_FILE,
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                inputStream = context.contentResolver.openInputStream(this)
-            }
-
-            "http",
-            "https" -> {
-                val request = Request.Builder()
-                    .url(toString())
-                    .build()
-                val client = OkHttpClient
-                    .Builder()
-                    .build()
-                val response = client
-                    .newCall(request)
-                    .execute()
-                val body = response.body
-                if (body != null) {
-                    if (response.code == 200) {
-                        inputStream = body.byteStream()
-                    } else {
-                        response.closeQuietly()
-                    }
-                }
-            }
-        }
-        if (inputStream != null) {
-            return inputStream.readBytes()
-        }
-
-    } catch (_: Exception) {
-
-    } finally {
-        inputStream?.close()
-    }
-
-    return null
-}
-
-/**
- * Reads the contents of the Uri to a ByteBuffer.
- *
- * @param context The context used to access the content resolver.
- *
- * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
- */
-fun Uri.readToBuffer(context: Context): ByteBuffer? = readBytes(context)
-    ?.let { bytes ->
-        ByteBuffer
-            .allocateDirect(bytes.size)
-            .order(ByteOrder.nativeOrder())
-            .put(bytes)
-    }
-
-/**
  * Copies the content from the source Uri to the destination Uri.
  *
  * @param context The context used to open InputStream and OutputStream from the Uris.
@@ -348,6 +281,74 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
     }
     return -1
 }
+
+/**
+ * Reads the contents of the Uri to a byte array.
+ *
+ * @param context The context used to access the content resolver.
+ *
+ * @return A byte array containing the contents of the Uri, or null if the operation fails.
+ */
+fun Uri.readBytes(context: Context): ByteArray? {
+    var inputStream: InputStream? = null
+
+    try {
+        when (scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE,
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                inputStream = context.contentResolver.openInputStream(this)
+            }
+
+            "http",
+            "https" -> {
+                val request = Request.Builder()
+                    .url(toString())
+                    .build()
+                val client = OkHttpClient
+                    .Builder()
+                    .build()
+                val response = client
+                    .newCall(request)
+                    .execute()
+                val body = response.body
+                if (body != null) {
+                    if (response.code == 200) {
+                        inputStream = body.byteStream()
+                    } else {
+                        response.closeQuietly()
+                    }
+                }
+            }
+        }
+        if (inputStream != null) {
+            return inputStream.readBytes()
+        }
+
+    } catch (_: Exception) {
+
+    } finally {
+        inputStream?.close()
+    }
+
+    return null
+}
+
+/**
+ * Reads the contents of the Uri to a ByteBuffer.
+ *
+ * @param context The context used to access the content resolver.
+ *
+ * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
+ */
+fun Uri.readToBuffer(context: Context): ByteBuffer? = readBytes(context)
+    ?.let { bytes ->
+        ByteBuffer
+            .allocateDirect(bytes.size)
+            .order(ByteOrder.nativeOrder())
+            .put(bytes)
+            .position(0) as ByteBuffer
+    }
 
 /**
  * Generates a hash from the content of the Uri.

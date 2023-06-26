@@ -16,6 +16,8 @@ import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
 import com.aureusapps.android.extensions.generateSHA1
 import com.aureusapps.android.extensions.listFiles
+import com.aureusapps.android.extensions.readBytes
+import com.aureusapps.android.extensions.readToBuffer
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import kotlinx.coroutines.runBlocking
@@ -167,6 +169,37 @@ class UriExtensionsInstrumentedTest {
             httpUri.copyTo(context, cacheFile.toUri())
             verifyCacheFileContent()
             server.shutdown()
+        }
+    }
+
+    @Test
+    fun test_readBytes() {
+        createTextFileInExternalStorage()
+        val bytes = textFile
+            .toUri()
+            .readBytes(context)
+        if (bytes == null) {
+            Assert.fail()
+        } else {
+            Assert.assertNotNull(bytes)
+            val string = String(bytes)
+            Assert.assertEquals(fileContent, string)
+        }
+    }
+
+    @Test
+    fun test_readToBuffer() {
+        createTextFileInExternalStorage()
+        val buffer = textFile
+            .toUri()
+            .readToBuffer(context)
+        if (buffer == null) {
+            Assert.fail()
+        } else {
+            val bytes = ByteArray(buffer.remaining())
+            buffer.get(bytes)
+            val string = String(bytes)
+            Assert.assertEquals(fileContent, string)
         }
     }
 
