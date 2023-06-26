@@ -7,53 +7,39 @@ import android.provider.MediaStore
 import android.text.TextUtils
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
+import okhttp3.internal.closeQuietly
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
+import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.DigestInputStream
 import java.security.MessageDigest
 
-suspend fun Uri.saveTo(context: Context, savePath: String) {
-    withContext(Dispatchers.IO) {
-        try {
-            when (scheme) {
-                ContentResolver.SCHEME_CONTENT,
-                ContentResolver.SCHEME_FILE,
-                ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                    val inputStream = context.contentResolver.openInputStream(this@saveTo)
-                        ?: throw IllegalStateException("Content provider crashed")
-                    val outputStream = FileOutputStream(savePath)
-                    inputStream.writeTo(outputStream)
-                    inputStream.close()
-                    outputStream.close()
-                }
-
-                "https",
-                "http" -> {
-                    downloadTo(savePath)
-                }
-
-                else -> throw IllegalStateException("Uri scheme does not supported: $scheme")
-            }
-
-        } catch (_: Exception) {
-
-        }
+/**
+ * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
+ */
+val Uri.isTreeUri: Boolean
+    get() {
+        val paths = pathSegments
+        return paths.size >= 2 && "tree" == paths[0]
     }
-}
 
+/**
+ * Returns true if the uri is a file uri, otherwise false.
+ */
+val Uri.isFileUri: Boolean
+    get() = scheme == ContentResolver.SCHEME_FILE
+
+/**
+ * Retrieves the file name of the content represented by the Uri.
+ *
+ * @param context The android context.
+ *
+ * @return The file name of the content, or null if the file name cannot be determined or error occurred.
+ */
 fun Uri.fileName(context: Context): String? {
     var fileName: String? = null
 
@@ -104,100 +90,6 @@ fun Uri.fileName(context: Context): String? {
     return fileName
 }
 
-suspend fun Uri.downloadTo(savePath: String) {
-    withContext(Dispatchers.IO) {
-        var connection: HttpURLConnection? = null
-        var inputStream: BufferedInputStream? = null
-        var outputStream: BufferedOutputStream? = null
-
-        try {
-            val url = this@downloadTo.toString()
-            val fileUrl = URL(url)
-            connection = fileUrl.openConnection() as HttpURLConnection
-            connection.connect()
-
-            // Check if the request was successful
-            val responseCode = connection.responseCode
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                inputStream = BufferedInputStream(connection.inputStream)
-                outputStream = BufferedOutputStream(FileOutputStream(savePath))
-
-                val buffer = ByteArray(4096)
-                var bytesRead: Int
-                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                    outputStream.write(buffer, 0, bytesRead)
-                }
-                outputStream.flush()
-            } else {
-                throw IOException("Failed to download file: $responseCode")
-            }
-
-        } finally {
-            connection?.disconnect()
-            inputStream?.close()
-            outputStream?.close()
-        }
-    }
-}
-
-/**
- * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
- */
-val Uri.isTreeUri: Boolean
-    get() {
-        val paths = pathSegments
-        return paths.size >= 2 && "tree" == paths[0]
-    }
-
-/**
- * Returns true if the uri is a file uri, otherwise false.
- */
-val Uri.isFileUri: Boolean
-    get() = scheme == ContentResolver.SCHEME_FILE
-
-/**
- * Creates a new file inside the directory given by uri.
- * File uris and document tree uris are supported.
- *
- * @param context The Android context.
- * @param displayName The name of the new file.
- * @param mimeType The mime type of the new file.
- *
- * @return Uri of the newly created file or null if the file creation failed.
- */
-fun Uri.createFile(
-    context: Context,
-    displayName: String,
-    mimeType: String
-): Uri? {
-    var fileUri: Uri? = null
-
-    try {
-        when {
-            isFileUri -> {
-                val path = path
-                if (path != null) {
-                    val file = File(path)
-                    if (file.isDirectory) {
-                        fileUri = File(file, displayName).toUri()
-                    }
-                }
-            }
-
-            isTreeUri -> {
-                fileUri = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.createFile(mimeType, displayName)
-                    ?.uri
-            }
-        }
-    } catch (_: Exception) {
-
-    }
-
-    return fileUri
-}
-
 /**
  * Returns files contained in the directory represented by this Uri.
  *
@@ -238,6 +130,50 @@ fun Uri.listFiles(context: Context): List<Uri>? {
     }
 
     return uriList
+}
+
+/**
+ * Creates a new file inside the directory given by uri.
+ * File uris and document tree uris are supported.
+ *
+ * @param context The Android context.
+ * @param displayName The name of the new file.
+ * @param mimeType The mime type of the new file.
+ *
+ * @return Uri of the newly created file or null if the file creation failed.
+ */
+fun Uri.createFile(
+    context: Context,
+    displayName: String,
+    mimeType: String
+): Uri? {
+    var fileUri: Uri? = null
+
+    try {
+        when {
+            isFileUri -> {
+                val path = path
+                if (path != null) {
+                    val file = File(path)
+                    if (file.isDirectory) {
+                        fileUri = File(file, displayName).toUri()
+                    }
+                }
+            }
+
+            isTreeUri -> {
+                fileUri = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.createFile(mimeType, displayName)
+                    ?.uri
+            }
+        }
+
+    } catch (_: Exception) {
+
+    }
+
+    return fileUri
 }
 
 /**
@@ -289,73 +225,7 @@ fun Uri.fileExists(context: Context, fileName: String): Int {
  */
 fun Uri.readBytes(context: Context): ByteArray? {
     var inputStream: InputStream? = null
-    var response: Response? = null
 
-    try {
-        when (scheme) {
-            ContentResolver.SCHEME_CONTENT,
-            ContentResolver.SCHEME_FILE,
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                inputStream = context.contentResolver.openInputStream(this)
-            }
-
-            "http",
-            "https" -> {
-                val request = Request.Builder()
-                    .url(this.toString())
-                    .build()
-                val client = OkHttpClient
-                    .Builder()
-                    .build()
-                response = client
-                    .newCall(request)
-                    .execute()
-                val body = response.body
-                if (body != null && response.code == 200) {
-                    inputStream = body.byteStream()
-                }
-            }
-        }
-        if (inputStream != null) {
-            return inputStream.readBytes()
-        }
-
-    } catch (_: Exception) {
-
-    } finally {
-        inputStream?.close()
-        response?.close()
-    }
-
-    return null
-}
-
-/**
- * Reads the contents of the Uri to a ByteBuffer.
- *
- * @param context The context used to access the content resolver.
- *
- * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
- */
-fun Uri.readBytesToBuffer(context: Context): ByteBuffer? = readBytes(context)
-    ?.let { bytes ->
-        ByteBuffer
-            .allocateDirect(bytes.size)
-            .order(ByteOrder.nativeOrder())
-            .put(bytes)
-    }
-
-/**
- * Generates a hash from the content of the Uri.
- *
- * @param context The context used to open an InputStream from the Uri.
- * @param algorithm The hash algorithm to use (e.g., "MD5" or "SHA-1").
- *
- * @return The hash string or null if an error occurred.
- */
-fun Uri.generateHash(context: Context, algorithm: String): String? {
-    var inputStream: InputStream? = null
-    var response: Response? = null
     try {
         when (scheme) {
             ContentResolver.SCHEME_CONTENT,
@@ -372,12 +242,150 @@ fun Uri.generateHash(context: Context, algorithm: String): String? {
                 val client = OkHttpClient
                     .Builder()
                     .build()
-                response = client
+                val response = client
                     .newCall(request)
                     .execute()
                 val body = response.body
-                if (body != null && response.code == 200) {
-                    inputStream = body.byteStream()
+                if (body != null) {
+                    if (response.code == 200) {
+                        inputStream = body.byteStream()
+                    } else {
+                        response.closeQuietly()
+                    }
+                }
+            }
+        }
+        if (inputStream != null) {
+            return inputStream.readBytes()
+        }
+
+    } catch (_: Exception) {
+
+    } finally {
+        inputStream?.close()
+    }
+
+    return null
+}
+
+/**
+ * Reads the contents of the Uri to a ByteBuffer.
+ *
+ * @param context The context used to access the content resolver.
+ *
+ * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
+ */
+fun Uri.readToBuffer(context: Context): ByteBuffer? = readBytes(context)
+    ?.let { bytes ->
+        ByteBuffer
+            .allocateDirect(bytes.size)
+            .order(ByteOrder.nativeOrder())
+            .put(bytes)
+    }
+
+/**
+ * Copies the content from the source Uri to the destination Uri.
+ *
+ * @param context The context used to open InputStream and OutputStream from the Uris.
+ * @param dstUri The destination Uri to write the content to.
+ *
+ * @return The total number of bytes written, or -1 if an error occurred.
+ */
+fun Uri.copyTo(context: Context, dstUri: Uri): Int {
+    var inputStream: InputStream? = null
+    var outputStream: OutputStream? = null
+
+    try {
+        outputStream = context.contentResolver.openOutputStream(dstUri)
+        when (scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE,
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                inputStream = context.contentResolver.openInputStream(this)
+            }
+
+            "http",
+            "https" -> {
+                val request = Request.Builder()
+                    .url(toString())
+                    .build()
+                val client = OkHttpClient
+                    .Builder()
+                    .build()
+                val response = client
+                    .newCall(request)
+                    .execute()
+                val body = response.body
+                if (body != null) {
+                    if (response.code == 200) {
+                        // closing input stream will also close the response
+                        inputStream = body.byteStream()
+                    } else {
+                        // don't call close if body is null
+                        response.closeQuietly()
+                    }
+                }
+            }
+        }
+
+        var totalBytesWritten = 0
+        if (inputStream != null && outputStream != null) {
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                outputStream.write(buffer, 0, bytesRead)
+                totalBytesWritten += bytesRead
+            }
+            outputStream.flush()
+            return totalBytesWritten
+        }
+
+    } catch (_: Exception) {
+
+    } finally {
+        inputStream?.close()
+        outputStream?.close()
+    }
+    return -1
+}
+
+/**
+ * Generates a hash from the content of the Uri.
+ *
+ * @param context The context used to open an InputStream from the Uri.
+ * @param algorithm The hash algorithm to use (e.g., "MD5" or "SHA-1").
+ *
+ * @return The hash string or null if an error occurred.
+ */
+fun Uri.generateHash(context: Context, algorithm: String): String? {
+    var inputStream: InputStream? = null
+
+    try {
+        when (scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE,
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                inputStream = context.contentResolver.openInputStream(this)
+            }
+
+            "http",
+            "https" -> {
+                val request = Request.Builder()
+                    .url(toString())
+                    .build()
+                val client = OkHttpClient
+                    .Builder()
+                    .build()
+                val response = client
+                    .newCall(request)
+                    .execute()
+                val body = response.body
+                if (body != null) {
+                    if (response.code == 200) {
+                        inputStream = body.byteStream()
+                    } else {
+                        response.closeQuietly()
+                    }
                 }
             }
         }
@@ -401,7 +409,6 @@ fun Uri.generateHash(context: Context, algorithm: String): String? {
 
     } finally {
         inputStream?.close()
-        response?.close()
     }
     return null
 }

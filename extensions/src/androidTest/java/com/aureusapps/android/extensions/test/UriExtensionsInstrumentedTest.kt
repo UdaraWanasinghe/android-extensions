@@ -6,12 +6,14 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.aureusapps.android.extensions.copyTo
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
 import com.aureusapps.android.extensions.generateSHA1
-import com.aureusapps.android.extensions.saveTo
+import com.aureusapps.android.extensions.listFiles
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import kotlinx.coroutines.runBlocking
@@ -45,66 +47,13 @@ class UriExtensionsInstrumentedTest {
         if (textFileUri != null) {
             deleteTextFile(textFileUri)
         }
+        // delete text file in external storage
+        if (textFile.exists()) {
+            textFile.delete()
+        }
         // delete cache file
         if (cacheFile.exists()) {
             cacheFile.delete()
-        }
-    }
-
-    @Test
-    fun test_saveContentUriToPath() {
-        runBlocking {
-            val textFileUri = createTextFileInContentProvider()
-            textFileUri.saveTo(context, cacheFile.absolutePath)
-            verifyCacheFileContent()
-        }
-    }
-
-    @Test
-    fun test_saveFileUriToPath() {
-        runBlocking {
-            createTextFileInExternalStorage()
-            val fileUri = Uri.fromFile(textFile)
-            fileUri.saveTo(context, cacheFile.absolutePath)
-            verifyCacheFileContent()
-        }
-    }
-
-    @Test
-    fun test_saveAndroidResourceUriToPath() {
-        runBlocking {
-            val resourceUri = getAndroidResourceUri()
-            resourceUri.saveTo(context, cacheFile.absolutePath)
-            verifyCacheFileContent()
-        }
-    }
-
-    private fun getAndroidResourceUri(): Uri {
-        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
-        val resId = R.raw.sample_text
-        val packageName = context.resources.getResourcePackageName(resId)
-        val typeName = context.resources.getResourceTypeName(resId)
-        val entryName = context.resources.getResourceEntryName(resId)
-        return Uri.parse("$scheme://$packageName/$typeName/$entryName")
-    }
-
-    @Test
-    fun test_saveHttpUriToPath() {
-        runBlocking {
-            val server = MockWebServer()
-            server.start()
-            val buffer = Buffer()
-            buffer.write(fileContent.toByteArray())
-            server.enqueue(
-                MockResponse()
-                    .setResponseCode(200)
-                    .setBody(buffer)
-            )
-            val contentUrl = server.url("/$fileName").toString()
-            val httpUri = Uri.parse(contentUrl)
-            httpUri.saveTo(context, cacheFile.absolutePath)
-            verifyCacheFileContent()
-            server.shutdown()
         }
     }
 
@@ -140,6 +89,65 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
+    fun test_listFiles() {
+        createTextFileInExternalStorage()
+        val files = textFile
+            .parentFile
+            ?.toUri()
+            ?.listFiles(context)
+        val fileListed = files?.any { it.fileName(context) == fileName } ?: false
+        Assert.assertTrue(fileListed)
+    }
+
+    @Test
+    fun test_copyContentUri() {
+        runBlocking {
+            val textFileUri = createTextFileInContentProvider()
+            textFileUri.copyTo(context, cacheFile.toUri())
+            verifyCacheFileContent()
+        }
+    }
+
+    @Test
+    fun test_copyFileUri() {
+        runBlocking {
+            createTextFileInExternalStorage()
+            val fileUri = Uri.fromFile(textFile)
+            fileUri.copyTo(context, cacheFile.toUri())
+            verifyCacheFileContent()
+        }
+    }
+
+    @Test
+    fun test_copyAndroidResourceUri() {
+        runBlocking {
+            val resourceUri = getAndroidResourceUri()
+            resourceUri.copyTo(context, cacheFile.toUri())
+            verifyCacheFileContent()
+        }
+    }
+
+    @Test
+    fun test_copyHttpUri() {
+        runBlocking {
+            val server = MockWebServer()
+            server.start()
+            val buffer = Buffer()
+            buffer.write(fileContent.toByteArray())
+            server.enqueue(
+                MockResponse()
+                    .setResponseCode(200)
+                    .setBody(buffer)
+            )
+            val contentUrl = server.url("/$fileName").toString()
+            val httpUri = Uri.parse(contentUrl)
+            httpUri.copyTo(context, cacheFile.toUri())
+            verifyCacheFileContent()
+            server.shutdown()
+        }
+    }
+
+    @Test
     fun test_generateHash() {
         val resUri = getAndroidResourceUri()
         val expectedSHA1 = "e666e67f66f4038e0c1d2f7c3a2abeaf27b3123f"
@@ -148,6 +156,15 @@ class UriExtensionsInstrumentedTest {
         val actualMD5 = resUri.generateMD5(context)
         Assert.assertEquals(expectedMD5, actualMD5)
         Assert.assertEquals(expectedSHA1, actualSHA1)
+    }
+
+    private fun getAndroidResourceUri(): Uri {
+        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
+        val resId = R.raw.sample_text
+        val packageName = context.resources.getResourcePackageName(resId)
+        val typeName = context.resources.getResourceTypeName(resId)
+        val entryName = context.resources.getResourceEntryName(resId)
+        return Uri.parse("$scheme://$packageName/$typeName/$entryName")
     }
 
     /**
@@ -215,8 +232,6 @@ class UriExtensionsInstrumentedTest {
 
     /**
      * Creates text file in the external storage.
-     *
-     * @return File instance of the text file.
      */
     private fun createTextFileInExternalStorage() {
         val inputStream = ByteArrayInputStream(fileContent.toByteArray()) as InputStream
