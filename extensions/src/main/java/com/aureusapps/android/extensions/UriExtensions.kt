@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -21,6 +22,8 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.security.DigestInputStream
+import java.security.MessageDigest
 
 suspend fun Uri.saveTo(context: Context, savePath: String) {
     withContext(Dispatchers.IO) {
@@ -286,7 +289,7 @@ fun Uri.fileExists(context: Context, fileName: String): Int {
  */
 fun Uri.readBytes(context: Context): ByteArray? {
     var inputStream: InputStream? = null
-    var bytes: ByteArray? = null
+    var response: Response? = null
 
     try {
         when (scheme) {
@@ -304,30 +307,27 @@ fun Uri.readBytes(context: Context): ByteArray? {
                 val client = OkHttpClient
                     .Builder()
                     .build()
-                val response = client
+                response = client
                     .newCall(request)
                     .execute()
                 val body = response.body
-                if (body != null) {
-                    if (response.code == 200) {
-                        inputStream = body.byteStream()
-                    } else {
-                        response.close()
-                    }
+                if (body != null && response.code == 200) {
+                    inputStream = body.byteStream()
                 }
             }
         }
         if (inputStream != null) {
-            bytes = inputStream.readBytes()
+            return inputStream.readBytes()
         }
 
     } catch (_: Exception) {
 
     } finally {
         inputStream?.close()
+        response?.close()
     }
 
-    return bytes
+    return null
 }
 
 /**
@@ -337,11 +337,88 @@ fun Uri.readBytes(context: Context): ByteArray? {
  *
  * @return A ByteBuffer containing the contents of the Uri, or null if the operation fails.
  */
-fun Uri.readBytesToBuffer(context: Context): ByteBuffer? {
-    return readBytes(context)?.let {
-        return ByteBuffer
-            .allocateDirect(it.size)
+fun Uri.readBytesToBuffer(context: Context): ByteBuffer? = readBytes(context)
+    ?.let { bytes ->
+        ByteBuffer
+            .allocateDirect(bytes.size)
             .order(ByteOrder.nativeOrder())
-            .put(it)
+            .put(bytes)
     }
+
+/**
+ * Generates a hash from the content of the Uri.
+ *
+ * @param context The context used to open an InputStream from the Uri.
+ * @param algorithm The hash algorithm to use (e.g., "MD5" or "SHA-1").
+ *
+ * @return The hash string or null if an error occurred.
+ */
+fun Uri.generateHash(context: Context, algorithm: String): String? {
+    var inputStream: InputStream? = null
+    var response: Response? = null
+    try {
+        when (scheme) {
+            ContentResolver.SCHEME_CONTENT,
+            ContentResolver.SCHEME_FILE,
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                inputStream = context.contentResolver.openInputStream(this)
+            }
+
+            "http",
+            "https" -> {
+                val request = Request.Builder()
+                    .url(toString())
+                    .build()
+                val client = OkHttpClient
+                    .Builder()
+                    .build()
+                response = client
+                    .newCall(request)
+                    .execute()
+                val body = response.body
+                if (body != null && response.code == 200) {
+                    inputStream = body.byteStream()
+                }
+            }
+        }
+
+        if (inputStream != null) {
+            val digest = MessageDigest.getInstance(algorithm)
+            val digestInputStream = DigestInputStream(inputStream, digest)
+            val buffer = ByteArray(8192)
+            while (digestInputStream.read(buffer) != -1) {
+                // Nothing to do here
+            }
+            val sha1Bytes = digest.digest()
+            val builder = StringBuilder()
+            for (byte in sha1Bytes) {
+                builder.append(String.format("%02x", byte))
+            }
+            return builder.toString()
+        }
+
+    } catch (_: Exception) {
+
+    } finally {
+        inputStream?.close()
+        response?.close()
+    }
+    return null
 }
+
+/**
+ * Generates an MD5 hash from the content of the Uri.
+ *
+ * @param context The context used to open an InputStream from the Uri.
+ *
+ * @return The MD5 hash string or null if an error occurred.
+ */
+fun Uri.generateMD5(context: Context): String? = generateHash(context, "MD5")
+
+/**
+ * Generates a SHA-1 hash from the content of the Uri.
+ *
+ * @param context The context used to open an InputStream from the Uri.
+ * @return The SHA-1 hash string or null if an error occurred.
+ */
+fun Uri.generateSHA1(context: Context): String? = generateHash(context, "SHA-1")

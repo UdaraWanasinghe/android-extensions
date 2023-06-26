@@ -9,6 +9,8 @@ import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.fileName
+import com.aureusapps.android.extensions.generateMD5
+import com.aureusapps.android.extensions.generateSHA1
 import com.aureusapps.android.extensions.saveTo
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
@@ -135,6 +137,17 @@ class UriExtensionsInstrumentedTest {
         val httpUri2 = Uri.parse("http://localhost:4648/sample_text.txt?param1=s&param2=q")
         val resultFileName2 = httpUri2.fileName(context)
         Assert.assertEquals(fileName, resultFileName2)
+    }
+
+    @Test
+    fun test_generateHash() {
+        val resUri = getAndroidResourceUri()
+        val expectedSHA1 = "e666e67f66f4038e0c1d2f7c3a2abeaf27b3123f"
+        val expectedMD5 = "6029f28561014cd2fccef51253be6dbb"
+        val actualSHA1 = resUri.generateSHA1(context)
+        val actualMD5 = resUri.generateMD5(context)
+        Assert.assertEquals(expectedMD5, actualMD5)
+        Assert.assertEquals(expectedSHA1, actualSHA1)
     }
 
     /**
