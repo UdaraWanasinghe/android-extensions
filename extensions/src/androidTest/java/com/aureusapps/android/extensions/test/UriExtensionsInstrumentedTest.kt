@@ -10,6 +10,8 @@ import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.copyTo
+import com.aureusapps.android.extensions.createFile
+import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
 import com.aureusapps.android.extensions.generateSHA1
@@ -97,6 +99,27 @@ class UriExtensionsInstrumentedTest {
             ?.listFiles(context)
         val fileListed = files?.any { it.fileName(context) == fileName } ?: false
         Assert.assertTrue(fileListed)
+    }
+
+    @Test
+    fun test_createFile() {
+        val directory = Environment.getExternalStorageDirectory()
+        val name = "new_file.txt"
+        val uri = directory
+            .toUri()
+            .createFile(context, name, "text/plain")
+        Assert.assertNotNull(uri)
+        Assert.assertEquals(name, uri?.fileName(context))
+    }
+
+    @Test
+    fun test_fileExists() {
+        createTextFileInExternalStorage()
+        val result = textFile
+            .parentFile
+            ?.toUri()
+            ?.fileExists(context, fileName) ?: -1
+        Assert.assertEquals(1, result)
     }
 
     @Test
