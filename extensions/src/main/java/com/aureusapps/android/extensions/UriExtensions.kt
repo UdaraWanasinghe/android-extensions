@@ -177,6 +177,51 @@ fun Uri.createFile(
 }
 
 /**
+ * Creates a new directory with the given name and returns the Uri of the created directory.
+ *
+ * @param context The android context.
+ * @param dirName The name of the directory to be created.
+ *
+ * @return The Uri of the created directory, or null if the directory could not be created.
+ */
+fun Uri.createDirectory(context: Context, dirName: String): Uri? {
+    var dirUri: Uri? = null
+    try {
+        when {
+            isFileUri -> {
+                val path = path
+                if (path != null) {
+                    val file = File(path, dirName)
+                    if (file.isDirectory || file.mkdirs()) {
+                        dirUri = file.toUri()
+                    }
+                }
+            }
+
+            isTreeUri -> {
+                val file = DocumentFile.fromTreeUri(context, this)
+                if (file != null) {
+                    val dir = file.findFile(dirName)
+                    if (dir != null && dir.isDirectory) {
+                        dirUri = dir.uri
+                        
+                    } else {
+                        val newFile = file.createDirectory(dirName)
+                        if (newFile != null) {
+                            dirUri = newFile.uri
+                        }
+                    }
+                }
+            }
+        }
+
+    } catch (_: Exception) {
+
+    }
+    return dirUri
+}
+
+/**
  * Returned whether file with the given name exists in the directory represented by the given Uri.
  *
  * @param context The Android context object.

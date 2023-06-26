@@ -10,6 +10,7 @@ import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.copyTo
+import com.aureusapps.android.extensions.createDirectory
 import com.aureusapps.android.extensions.createFile
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
@@ -20,7 +21,6 @@ import com.aureusapps.android.extensions.readBytes
 import com.aureusapps.android.extensions.readToBuffer
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
-import kotlinx.coroutines.runBlocking
 import okio.Buffer
 import org.junit.After
 import org.junit.Assert
@@ -115,6 +115,24 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
+    fun test_createDirectory() {
+        val parentDir = Environment.getExternalStorageDirectory()
+        val name = System.currentTimeMillis().toString()
+        val dir = File(parentDir, name)
+        val dirUri = parentDir
+            .toUri()
+            .createDirectory(context, name)
+        Assert.assertTrue(dir.exists() && dir.isDirectory)
+        Assert.assertEquals(
+            dir.absolutePath,
+            dirUri?.path
+        )
+        if (dir.exists()) {
+            dir.delete()
+        }
+    }
+
+    @Test
     fun test_fileExists() {
         createTextFileInExternalStorage()
         val result = textFile
@@ -126,50 +144,42 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun test_copyContentUri() {
-        runBlocking {
-            val textFileUri = createTextFileInContentProvider()
-            textFileUri.copyTo(context, cacheFile.toUri())
-            verifyCacheFileContent()
-        }
+        val textFileUri = createTextFileInContentProvider()
+        textFileUri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
     }
 
     @Test
     fun test_copyFileUri() {
-        runBlocking {
-            createTextFileInExternalStorage()
-            val fileUri = Uri.fromFile(textFile)
-            fileUri.copyTo(context, cacheFile.toUri())
-            verifyCacheFileContent()
-        }
+        createTextFileInExternalStorage()
+        val fileUri = Uri.fromFile(textFile)
+        fileUri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
     }
 
     @Test
     fun test_copyAndroidResourceUri() {
-        runBlocking {
-            val resourceUri = getAndroidResourceUri()
-            resourceUri.copyTo(context, cacheFile.toUri())
-            verifyCacheFileContent()
-        }
+        val resourceUri = getAndroidResourceUri()
+        resourceUri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
     }
 
     @Test
     fun test_copyHttpUri() {
-        runBlocking {
-            val server = MockWebServer()
-            server.start()
-            val buffer = Buffer()
-            buffer.write(fileContent.toByteArray())
-            server.enqueue(
-                MockResponse()
-                    .setResponseCode(200)
-                    .setBody(buffer)
-            )
-            val contentUrl = server.url("/$fileName").toString()
-            val httpUri = Uri.parse(contentUrl)
-            httpUri.copyTo(context, cacheFile.toUri())
-            verifyCacheFileContent()
-            server.shutdown()
-        }
+        val server = MockWebServer()
+        server.start()
+        val buffer = Buffer()
+        buffer.write(fileContent.toByteArray())
+        server.enqueue(
+            MockResponse()
+                .setResponseCode(200)
+                .setBody(buffer)
+        )
+        val contentUrl = server.url("/$fileName").toString()
+        val httpUri = Uri.parse(contentUrl)
+        httpUri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
+        server.shutdown()
     }
 
     @Test
