@@ -228,7 +228,7 @@ fun Uri.createDirectory(context: Context, dirName: String): Uri? {
  *
  * @return `true` if the deletion is successful, `false` otherwise.
  */
-fun Uri.deleteRecursively(context: Context): Boolean {
+fun Uri.delete(context: Context): Boolean {
     var deleted = false
     try {
         when {

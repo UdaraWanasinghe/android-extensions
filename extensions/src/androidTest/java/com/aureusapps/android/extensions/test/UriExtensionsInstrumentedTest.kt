@@ -12,7 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.copyTo
 import com.aureusapps.android.extensions.createDirectory
 import com.aureusapps.android.extensions.createFile
-import com.aureusapps.android.extensions.deleteRecursively
+import com.aureusapps.android.extensions.delete
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
@@ -164,7 +164,7 @@ class UriExtensionsInstrumentedTest {
         )
         val deleted = root
             .toUri()
-            .deleteRecursively(context)
+            .delete(context)
         Assert.assertTrue(deleted)
         if (root.exists()) {
             root.deleteRecursively()
