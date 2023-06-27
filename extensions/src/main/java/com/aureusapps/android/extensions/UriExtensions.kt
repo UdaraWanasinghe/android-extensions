@@ -204,7 +204,7 @@ fun Uri.createDirectory(context: Context, dirName: String): Uri? {
                     val dir = file.findFile(dirName)
                     if (dir != null && dir.isDirectory) {
                         dirUri = dir.uri
-                        
+
                     } else {
                         val newFile = file.createDirectory(dirName)
                         if (newFile != null) {
@@ -219,6 +219,45 @@ fun Uri.createDirectory(context: Context, dirName: String): Uri? {
 
     }
     return dirUri
+}
+
+/**
+ * Deletes the file or directory represented by this [Uri] and all its contents recursively.
+ *
+ * @param context The android context.
+ *
+ * @return `true` if the deletion is successful, `false` otherwise.
+ */
+fun Uri.deleteRecursively(context: Context): Boolean {
+    var deleted = false
+    try {
+        when {
+            ContentResolver.SCHEME_FILE == scheme -> {
+                val path = path
+                if (path != null) {
+                    val file = File(path)
+                    deleted = file.deleteRecursively()
+                }
+            }
+
+            ContentResolver.SCHEME_CONTENT == scheme -> {
+                val file = DocumentFile.fromSingleUri(context, this)
+                if (file != null) {
+                    deleted = file.deleteRecursively()
+                }
+            }
+
+            isTreeUri -> {
+                val file = DocumentFile.fromTreeUri(context, this)
+                if (file != null) {
+                    deleted = file.deleteRecursively()
+                }
+            }
+        }
+    } catch (_: Exception) {
+
+    }
+    return deleted
 }
 
 /**
