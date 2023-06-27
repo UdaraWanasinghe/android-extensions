@@ -243,14 +243,14 @@ fun Uri.deleteRecursively(context: Context): Boolean {
             ContentResolver.SCHEME_CONTENT == scheme -> {
                 val file = DocumentFile.fromSingleUri(context, this)
                 if (file != null) {
-                    deleted = file.deleteRecursively()
+                    deleted = file.delete()
                 }
             }
 
             isTreeUri -> {
                 val file = DocumentFile.fromTreeUri(context, this)
                 if (file != null) {
-                    deleted = file.deleteRecursively()
+                    deleted = file.delete()
                 }
             }
         }

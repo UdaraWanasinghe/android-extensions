@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.copyTo
 import com.aureusapps.android.extensions.createDirectory
 import com.aureusapps.android.extensions.createFile
+import com.aureusapps.android.extensions.deleteRecursively
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
@@ -19,6 +20,9 @@ import com.aureusapps.android.extensions.generateSHA1
 import com.aureusapps.android.extensions.listFiles
 import com.aureusapps.android.extensions.readBytes
 import com.aureusapps.android.extensions.readToBuffer
+import com.aureusapps.android.extensions.test.utils.FileGenerator
+import com.aureusapps.android.extensions.test.utils.FileGenerator.DirectoryNode
+import com.aureusapps.android.extensions.test.utils.FileGenerator.FileNode
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import okio.Buffer
@@ -33,6 +37,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.InputStreamReader
+import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class UriExtensionsInstrumentedTest {
@@ -129,6 +134,41 @@ class UriExtensionsInstrumentedTest {
         )
         if (dir.exists()) {
             dir.delete()
+        }
+    }
+
+    @Test
+    fun test_deleteRecursively() {
+        val rootName = UUID.randomUUID().toString()
+        val root = File(context.cacheDir, rootName)
+        FileGenerator.generate(
+            root,
+            listOf(
+                FileNode("1"),
+                DirectoryNode(
+                    "2",
+                    listOf(
+                        FileNode("4"),
+                        DirectoryNode(
+                            "5",
+                            listOf(
+                                FileNode("7"),
+                                FileNode("8")
+                            )
+                        ),
+                        FileNode("6")
+                    )
+                ),
+                FileNode("3")
+            )
+        )
+        val deleted = root
+            .toUri()
+            .deleteRecursively(context)
+        Assert.assertTrue(deleted)
+        if (root.exists()) {
+            root.deleteRecursively()
+            Assert.fail()
         }
     }
 
