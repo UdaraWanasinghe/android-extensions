@@ -41,15 +41,3 @@ fun DocumentFile.walkTopDown(action: (DocumentFile) -> Boolean): Boolean {
     }
     return true
 }
-
-/**
- * Deletes the current [DocumentFile] instance and all its contents recursively,
- * including subdirectories and files.
- *
- * @return `true` if the deletion is successful, `false` otherwise.
- */
-fun DocumentFile.deleteRecursively(): Boolean {
-    return walkBottomUp { file ->
-        file.delete()
-    }
-}
