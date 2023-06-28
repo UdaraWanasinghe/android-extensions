@@ -13,6 +13,7 @@ import com.aureusapps.android.extensions.copyTo
 import com.aureusapps.android.extensions.createDirectory
 import com.aureusapps.android.extensions.createFile
 import com.aureusapps.android.extensions.delete
+import com.aureusapps.android.extensions.exists
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.generateMD5
@@ -74,25 +75,22 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_getFileUriFileName() {
+    fun test_getFileName() {
+        // file uri
         createTextFileInExternalStorage()
-        val resultFileName = Uri.fromFile(textFile).fileName(context)
-        Assert.assertEquals(fileName, resultFileName)
-    }
+        var name = Uri.fromFile(textFile).fileName(context)
+        Assert.assertEquals(fileName, name)
 
-    @Test
-    fun test_getAndroidUriFileName() {
+        // android resource uri
         val resourceUri = getAndroidResourceUri()
-        val resultFileName = resourceUri.fileName(context)
-        Assert.assertEquals("sample_text", resultFileName)
-    }
+        name = resourceUri.fileName(context)
+        Assert.assertEquals("sample_text", name)
 
-    @Test
-    fun test_getHttpUriFileName() {
-        val httpUri1 = Uri.parse("http://localhost:4648/sample_text.txt")
+        // http uris
+        val httpUri1 = Uri.parse("http://localhost:4648/$fileName")
         val resultFileName1 = httpUri1.fileName(context)
         Assert.assertEquals(fileName, resultFileName1)
-        val httpUri2 = Uri.parse("http://localhost:4648/sample_text.txt?param1=s&param2=q")
+        val httpUri2 = Uri.parse("http://localhost:4648/$fileName?param1=s&param2=q")
         val resultFileName2 = httpUri2.fileName(context)
         Assert.assertEquals(fileName, resultFileName2)
     }
@@ -173,39 +171,62 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
+    fun test_exists() {
+        // check file uri
+        createTextFileInExternalStorage()
+        var exists = textFile.toUri().exists(context)
+        Assert.assertTrue(exists)
+
+        // check http uri
+        val server = hostFileContent()
+        val contentUrl = server.url("/$fileName").toString()
+        val httpUri = Uri.parse(contentUrl)
+        exists = httpUri.exists(context)
+        server.shutdown()
+        Assert.assertTrue(exists)
+    }
+
+    @Test
     fun test_fileExists() {
         createTextFileInExternalStorage()
         val result = textFile
             .parentFile
             ?.toUri()
-            ?.fileExists(context, fileName) ?: -1
-        Assert.assertEquals(1, result)
+            ?.fileExists(context, fileName) ?: false
+        Assert.assertTrue(result)
     }
 
     @Test
-    fun test_copyContentUri() {
-        val textFileUri = createTextFileInContentProvider()
-        textFileUri.copyTo(context, cacheFile.toUri())
-        verifyCacheFileContent()
-    }
-
-    @Test
-    fun test_copyFileUri() {
+    fun test_copyUri() {
+        // file uri
         createTextFileInExternalStorage()
-        val fileUri = Uri.fromFile(textFile)
-        fileUri.copyTo(context, cacheFile.toUri())
+        var uri = Uri.fromFile(textFile)
+        uri.copyTo(context, cacheFile.toUri())
         verifyCacheFileContent()
+        deleteTextFile(uri)
+
+        // content provider uri
+        uri = createTextFileInContentProvider()
+        uri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
+        deleteTextFile(uri)
+
+        // android resource uri
+        uri = getAndroidResourceUri()
+        uri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
+        deleteTextFile(uri)
+
+        // http uri
+        val server = hostFileContent()
+        val contentUrl = server.url("/$fileName").toString()
+        uri = Uri.parse(contentUrl)
+        uri.copyTo(context, cacheFile.toUri())
+        verifyCacheFileContent()
+        server.shutdown()
     }
 
-    @Test
-    fun test_copyAndroidResourceUri() {
-        val resourceUri = getAndroidResourceUri()
-        resourceUri.copyTo(context, cacheFile.toUri())
-        verifyCacheFileContent()
-    }
-
-    @Test
-    fun test_copyHttpUri() {
+    private fun hostFileContent(): MockWebServer {
         val server = MockWebServer()
         server.start()
         val buffer = Buffer()
@@ -215,11 +236,7 @@ class UriExtensionsInstrumentedTest {
                 .setResponseCode(200)
                 .setBody(buffer)
         )
-        val contentUrl = server.url("/$fileName").toString()
-        val httpUri = Uri.parse(contentUrl)
-        httpUri.copyTo(context, cacheFile.toUri())
-        verifyCacheFileContent()
-        server.shutdown()
+        return server
     }
 
     @Test

@@ -1,9 +1,9 @@
 package com.aureusapps.android.extensions
 
+import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.provider.MediaStore
 import android.text.TextUtils
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -13,6 +13,8 @@ import okhttp3.internal.closeQuietly
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.DigestInputStream
@@ -40,53 +42,45 @@ val Uri.isFileUri: Boolean
  *
  * @return The file name of the content, or null if the file name cannot be determined or error occurred.
  */
+@SuppressLint("DiscouragedApi")
 fun Uri.fileName(context: Context): String? {
     var fileName: String? = null
-
     try {
         when (scheme) {
             ContentResolver.SCHEME_CONTENT -> {
-                val cursor = context.contentResolver.query(
-                    this,
-                    arrayOf(MediaStore.MediaColumns.DISPLAY_NAME),
-                    null,
-                    null,
-                    null
-                )
-                cursor?.use {
-                    if (it.moveToFirst()) {
-                        val columnIndex = it.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
-                        fileName = it.getString(columnIndex)
+                fileName = DocumentFile.fromSingleUri(context, this)?.name
+            }
+
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                val segments = pathSegments
+                if (segments.size >= 1) {
+                    val lastSegment = segments.last()
+                    if (TextUtils.isDigitsOnly(lastSegment)) {
+                        fileName = context
+                            .resources
+                            .getResourceEntryName(lastSegment.toInt())
+
+                    } else if (segments.size >= 2) {
+                        fileName = lastSegment
                     }
                 }
             }
 
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                val lastSegment = lastPathSegment
-                fileName = if (lastSegment != null && TextUtils.isDigitsOnly(lastSegment)) {
-                    context.resources.getResourceEntryName(lastSegment.toInt())
-                } else {
-                    lastSegment
-                }
-            }
-
             ContentResolver.SCHEME_FILE -> {
-                val path = path
-                fileName = path?.substringAfterLast("/")
+                fileName = lastPathSegment
             }
 
             "https",
             "http" -> {
-                val path = path
-                val lastPathSegment = path?.substringAfterLast("/")
-                fileName = lastPathSegment?.substringBefore("?")
+                fileName = path
+                    ?.substringAfterLast("/")
+                    ?.substringBefore("?")
             }
         }
 
     } catch (_: Exception) {
 
     }
-
     return fileName
 }
 
@@ -96,39 +90,30 @@ fun Uri.fileName(context: Context): String? {
  * @param context The Android context.
  *
  * @return A list of files contained in the directory represented by this Uri
- * or null if error occurred.
+ * or null if the given [Uri] does not represent a directory.
  */
 fun Uri.listFiles(context: Context): List<Uri>? {
     var uriList: List<Uri>? = null
-
     try {
         when {
             isFileUri -> {
-                val path = path
-                if (path != null) {
-                    val file = File(path)
-                    if (file.isDirectory) {
-                        uriList = file
-                            .listFiles()
-                            ?.map { it.toUri() }
-                    }
-                }
+                uriList = path
+                    ?.let { File(it) }
+                    ?.takeIf { it.isDirectory }
+                    ?.listFiles()
+                    ?.map { it.toUri() }
             }
 
             isTreeUri -> {
-                val file = DocumentFile.fromTreeUri(context, this)
-                if (file != null) {
-                    uriList = file
-                        .listFiles()
-                        .map { it.uri }
-                }
+                uriList = DocumentFile.fromTreeUri(context, this)
+                    ?.listFiles()
+                    ?.map { it.uri }
             }
         }
 
     } catch (_: Exception) {
 
     }
-
     return uriList
 }
 
@@ -148,17 +133,14 @@ fun Uri.createFile(
     mimeType: String
 ): Uri? {
     var fileUri: Uri? = null
-
     try {
         when {
             isFileUri -> {
-                val path = path
-                if (path != null) {
-                    val file = File(path)
-                    if (file.isDirectory) {
-                        fileUri = File(file, displayName).toUri()
-                    }
-                }
+                fileUri = path
+                    ?.let { File(it) }
+                    ?.takeIf { it.isDirectory }
+                    ?.let { File(it, displayName) }
+                    ?.toUri()
             }
 
             isTreeUri -> {
@@ -182,36 +164,29 @@ fun Uri.createFile(
  * @param context The android context.
  * @param dirName The name of the directory to be created.
  *
- * @return The Uri of the created directory, or null if the directory could not be created.
+ * @return The Uri of the created directory or existing directory, or null if the directory could not be created.
  */
 fun Uri.createDirectory(context: Context, dirName: String): Uri? {
     var dirUri: Uri? = null
     try {
         when {
             isFileUri -> {
-                val path = path
-                if (path != null) {
-                    val file = File(path, dirName)
-                    if (file.isDirectory || file.mkdirs()) {
-                        dirUri = file.toUri()
-                    }
-                }
+                dirUri = path
+                    ?.let { File(it, dirName) }
+                    ?.takeIf { it.isDirectory || it.mkdir() }
+                    ?.toUri()
             }
 
             isTreeUri -> {
-                val file = DocumentFile.fromTreeUri(context, this)
-                if (file != null) {
-                    val dir = file.findFile(dirName)
-                    if (dir != null && dir.isDirectory) {
-                        dirUri = dir.uri
-
-                    } else {
-                        val newFile = file.createDirectory(dirName)
-                        if (newFile != null) {
-                            dirUri = newFile.uri
-                        }
-                    }
-                }
+                val root = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.takeIf { it.isDirectory }
+                dirUri = root
+                    ?.findFile(dirName)
+                    ?.takeIf { it.isDirectory }
+                    ?.uri ?: root
+                    ?.createDirectory(dirName)
+                    ?.uri
             }
         }
 
@@ -219,6 +194,79 @@ fun Uri.createDirectory(context: Context, dirName: String): Uri? {
 
     }
     return dirUri
+}
+
+/**
+ * Checks if the resource referenced by the Uri exists.
+ *
+ * @param context The context used for accessing resources and content resolver.
+ *
+ * @return `true` if the resource exists, `false` otherwise.
+ */
+@SuppressLint("DiscouragedApi")
+fun Uri.exists(context: Context): Boolean {
+    var exists = false
+    try {
+        when (scheme) {
+            ContentResolver.SCHEME_FILE -> {
+                exists = path
+                    ?.let { File(it) }
+                    ?.exists() ?: false
+            }
+
+            ContentResolver.SCHEME_CONTENT -> {
+                exists = DocumentFile
+                    .fromSingleUri(context, this)
+                    ?.exists() ?: false
+            }
+
+            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+                val segments = pathSegments
+                if (segments.size >= 1) {
+                    val lastSegment = segments.last()
+                    if (TextUtils.isDigitsOnly(lastSegment)) {
+                        context
+                            .resources
+                            .getResourceEntryName(lastSegment.toInt())
+                        exists = true
+
+                    } else if (segments.size >= 2) {
+                        val resourceType = segments[0]
+                        val packageName = authority
+                        val resourceId = context
+                            .resources
+                            .getIdentifier(lastSegment, resourceType, packageName)
+                        if (resourceId != 0) {
+                            exists = true
+                        }
+                    }
+                }
+            }
+
+            "tree" -> {
+                exists = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.exists() ?: false
+            }
+
+            "http",
+            "https" -> {
+                val url = URL(toString())
+                val connection = url.openConnection() as HttpURLConnection
+                connection.connect()
+                exists = connection.responseCode == 200
+                connection.disconnect()
+            }
+
+            else -> {
+                throw Exception("Unknown Uri scheme")
+            }
+        }
+
+    } catch (_: Exception) {
+
+    }
+    return exists
 }
 
 /**
@@ -233,27 +281,24 @@ fun Uri.delete(context: Context): Boolean {
     try {
         when {
             ContentResolver.SCHEME_FILE == scheme -> {
-                val path = path
-                if (path != null) {
-                    val file = File(path)
-                    deleted = file.deleteRecursively()
-                }
+                deleted = path
+                    ?.let { File(it) }
+                    ?.deleteRecursively() ?: false
             }
 
             ContentResolver.SCHEME_CONTENT == scheme -> {
-                val file = DocumentFile.fromSingleUri(context, this)
-                if (file != null) {
-                    deleted = file.delete()
-                }
+                deleted = DocumentFile
+                    .fromSingleUri(context, this)
+                    ?.delete() ?: false
             }
 
             isTreeUri -> {
-                val file = DocumentFile.fromTreeUri(context, this)
-                if (file != null) {
-                    deleted = file.delete()
-                }
+                deleted = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.delete() ?: false
             }
         }
+
     } catch (_: Exception) {
 
     }
@@ -261,43 +306,36 @@ fun Uri.delete(context: Context): Boolean {
 }
 
 /**
- * Returned whether file with the given name exists in the directory represented by the given Uri.
+ * Checks if a file with the given name exists within the directory specified by the Uri.
  *
- * @param context The Android context object.
- * @param fileName The name of the file to match.
+ * @param context The android context.
+ * @param fileName The name of the file to check for existence.
  *
- * @return 1 if file exists, 0 if file does not exist or -1 if error.
+ * @return `true` if the file exists, `false` otherwise.
  */
-fun Uri.fileExists(context: Context, fileName: String): Int {
-    var status = -1
-
+fun Uri.fileExists(context: Context, fileName: String): Boolean {
+    var exists = false
     try {
         when {
             isFileUri -> {
-                val path = path
-                if (path != null) {
-                    val parent = File(path)
-                    if (parent.isDirectory) {
-                        val file = File(parent, fileName)
-                        status = if (file.exists()) 1 else 0
-                    }
-                }
+                exists = path
+                    ?.let { File(it) }
+                    ?.takeIf { it.isDirectory }
+                    ?.let { File(it, fileName) }
+                    ?.exists() ?: false
             }
 
             isTreeUri -> {
-                val file = DocumentFile.fromTreeUri(context, this)
-                if (file != null) {
-                    val exists = file.listFiles().any { it.name == fileName }
-                    status = if (exists) 1 else 0
-                }
+                exists = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.findFile(fileName) != null
             }
         }
 
     } catch (_: Exception) {
 
     }
-
-    return status
+    return exists
 }
 
 /**
@@ -311,7 +349,6 @@ fun Uri.fileExists(context: Context, fileName: String): Int {
 fun Uri.copyTo(context: Context, dstUri: Uri): Int {
     var inputStream: InputStream? = null
     var outputStream: OutputStream? = null
-
     try {
         outputStream = context.contentResolver.openOutputStream(dstUri)
         when (scheme) {
@@ -345,16 +382,16 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
             }
         }
 
-        var totalBytesWritten = 0
+        var bytesWritten = 0
         if (inputStream != null && outputStream != null) {
             val buffer = ByteArray(8192)
             var bytesRead: Int
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                 outputStream.write(buffer, 0, bytesRead)
-                totalBytesWritten += bytesRead
+                bytesWritten += bytesRead
             }
             outputStream.flush()
-            return totalBytesWritten
+            return bytesWritten
         }
 
     } catch (_: Exception) {
@@ -375,7 +412,6 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
  */
 fun Uri.readBytes(context: Context): ByteArray? {
     var inputStream: InputStream? = null
-
     try {
         when (scheme) {
             ContentResolver.SCHEME_CONTENT,
@@ -414,7 +450,6 @@ fun Uri.readBytes(context: Context): ByteArray? {
     } finally {
         inputStream?.close()
     }
-
     return null
 }
 
@@ -444,7 +479,6 @@ fun Uri.readToBuffer(context: Context): ByteBuffer? = readBytes(context)
  */
 fun Uri.generateHash(context: Context, algorithm: String): String? {
     var inputStream: InputStream? = null
-
     try {
         when (scheme) {
             ContentResolver.SCHEME_CONTENT,
