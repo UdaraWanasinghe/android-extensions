@@ -17,6 +17,7 @@ import com.aureusapps.android.extensions.exists
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.findFile
+import com.aureusapps.android.extensions.isDirectory
 import com.aureusapps.android.extensions.isEmpty
 import com.aureusapps.android.extensions.listFiles
 import com.aureusapps.android.extensions.readBytes
@@ -113,8 +114,32 @@ class UriExtensionsInstrumentedTest {
             .parentFile
             ?.toUri()
             ?.isEmpty(context)
-        
+
         Assert.assertFalse(isEmpty!!)
+    }
+
+    @Test
+    fun test_isDirectory() {
+        val rootName = UUID.randomUUID().toString()
+        TestHelpers.generateFiles(
+            Environment.getExternalStorageDirectory(),
+            listOf(
+                DirectoryNode(
+                    rootName,
+                    listOf(
+                        FileNode(
+                            UUID.randomUUID().toString()
+                        )
+                    )
+                )
+            )
+        )
+        val file = File(Environment.getExternalStorageDirectory(), rootName)
+        val result = file
+            .toUri()
+            .isDirectory(context)
+        file.deleteRecursively()
+        Assert.assertTrue(result)
     }
 
     @Test
