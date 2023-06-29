@@ -83,6 +83,35 @@ fun Uri.fileName(context: Context): String? {
 }
 
 /**
+ * Checks if the Uri represents a directory.
+ *
+ * @param context The context used for accessing content resolver.
+ * @return `true` if the Uri represents a directory, `false` otherwise.
+ */
+fun Uri.isDirectory(context: Context): Boolean {
+    var result = false
+    try {
+        when {
+            isFileUri -> {
+                result = path
+                    ?.let { File(it) }
+                    ?.isDirectory ?: false
+            }
+
+            isTreeUri -> {
+                result = DocumentFile
+                    .fromTreeUri(context, this)
+                    ?.isDirectory ?: false
+            }
+        }
+
+    } catch (_: Exception) {
+
+    }
+    return result
+}
+
+/**
  * Returns files contained in the directory represented by this Uri.
  *
  * @param context The Android context.
