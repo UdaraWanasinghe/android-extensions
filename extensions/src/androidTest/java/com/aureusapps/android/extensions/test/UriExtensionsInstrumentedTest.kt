@@ -16,6 +16,7 @@ import com.aureusapps.android.extensions.delete
 import com.aureusapps.android.extensions.exists
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
+import com.aureusapps.android.extensions.findFile
 import com.aureusapps.android.extensions.listFiles
 import com.aureusapps.android.extensions.readBytes
 import com.aureusapps.android.extensions.readToBuffer
@@ -182,6 +183,17 @@ class UriExtensionsInstrumentedTest {
         exists = httpUri.exists(context)
         server.shutdown()
         Assert.assertTrue(exists)
+    }
+
+    @Test
+    fun test_findFile() {
+        createTextFileInExternalStorage()
+        val file = Environment
+            .getExternalStorageDirectory()
+            .toUri()
+            .findFile(context, fileName)
+        Assert.assertNotNull(file)
+        Assert.assertEquals(fileName, file?.fileName(context))
     }
 
     @Test
