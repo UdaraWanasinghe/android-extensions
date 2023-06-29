@@ -116,6 +116,23 @@ fun Uri.listFiles(context: Context): List<Uri>? {
 }
 
 /**
+ * Checks if the directory represented by the Uri is empty.
+ *
+ * @param context The context used for accessing content resolver.
+ * @return `true` if the directory is empty, `false` otherwise.
+ */
+fun Uri.isEmpty(context: Context): Boolean {
+    var empty = false
+    try {
+        empty = listFiles(context)?.isEmpty() ?: false
+
+    } catch (_: Exception) {
+
+    }
+    return empty
+}
+
+/**
  * Creates a new file inside the directory given by uri.
  * File uris and document tree uris are supported.
  *

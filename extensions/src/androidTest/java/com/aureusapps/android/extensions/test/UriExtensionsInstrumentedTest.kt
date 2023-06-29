@@ -17,6 +17,7 @@ import com.aureusapps.android.extensions.exists
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.findFile
+import com.aureusapps.android.extensions.isEmpty
 import com.aureusapps.android.extensions.listFiles
 import com.aureusapps.android.extensions.readBytes
 import com.aureusapps.android.extensions.readToBuffer
@@ -103,6 +104,17 @@ class UriExtensionsInstrumentedTest {
             ?.listFiles(context)
         val fileListed = files?.any { it.fileName(context) == fileName } ?: false
         Assert.assertTrue(fileListed)
+    }
+
+    @Test
+    fun test_isEmpty() {
+        createTextFileInExternalStorage()
+        val isEmpty = textFile
+            .parentFile
+            ?.toUri()
+            ?.isEmpty(context)
+        
+        Assert.assertFalse(isEmpty!!)
     }
 
     @Test
