@@ -16,14 +16,12 @@ import com.aureusapps.android.extensions.delete
 import com.aureusapps.android.extensions.exists
 import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
-import com.aureusapps.android.extensions.generateMD5
-import com.aureusapps.android.extensions.generateSHA1
 import com.aureusapps.android.extensions.listFiles
 import com.aureusapps.android.extensions.readBytes
 import com.aureusapps.android.extensions.readToBuffer
-import com.aureusapps.android.extensions.test.utils.FileGenerator
-import com.aureusapps.android.extensions.test.utils.FileGenerator.DirectoryNode
-import com.aureusapps.android.extensions.test.utils.FileGenerator.FileNode
+import com.aureusapps.android.extensions.test.utils.TestHelpers
+import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
+import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import okio.Buffer
@@ -82,7 +80,7 @@ class UriExtensionsInstrumentedTest {
         Assert.assertEquals(fileName, name)
 
         // android resource uri
-        val resourceUri = getAndroidResourceUri()
+        val resourceUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
         name = resourceUri.fileName(context)
         Assert.assertEquals("sample_text", name)
 
@@ -139,7 +137,7 @@ class UriExtensionsInstrumentedTest {
     fun test_deleteRecursively() {
         val rootName = UUID.randomUUID().toString()
         val root = File(context.cacheDir, rootName)
-        FileGenerator.generate(
+        TestHelpers.generateFiles(
             root,
             listOf(
                 FileNode("1"),
@@ -212,7 +210,7 @@ class UriExtensionsInstrumentedTest {
         deleteTextFile(uri)
 
         // android resource uri
-        uri = getAndroidResourceUri()
+        uri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
         uri.copyTo(context, cacheFile.toUri())
         verifyCacheFileContent()
         deleteTextFile(uri)
@@ -268,26 +266,6 @@ class UriExtensionsInstrumentedTest {
             val string = String(bytes)
             Assert.assertEquals(fileContent, string)
         }
-    }
-
-    @Test
-    fun test_generateHash() {
-        val resUri = getAndroidResourceUri()
-        val expectedSHA1 = "e666e67f66f4038e0c1d2f7c3a2abeaf27b3123f"
-        val expectedMD5 = "6029f28561014cd2fccef51253be6dbb"
-        val actualSHA1 = resUri.generateSHA1(context)
-        val actualMD5 = resUri.generateMD5(context)
-        Assert.assertEquals(expectedMD5, actualMD5)
-        Assert.assertEquals(expectedSHA1, actualSHA1)
-    }
-
-    private fun getAndroidResourceUri(): Uri {
-        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
-        val resId = R.raw.sample_text
-        val packageName = context.resources.getResourcePackageName(resId)
-        val typeName = context.resources.getResourceTypeName(resId)
-        val entryName = context.resources.getResourceEntryName(resId)
-        return Uri.parse("$scheme://$packageName/$typeName/$entryName")
     }
 
     /**

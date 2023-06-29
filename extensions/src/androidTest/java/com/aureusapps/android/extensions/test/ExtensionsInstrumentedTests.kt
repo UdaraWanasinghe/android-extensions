@@ -9,6 +9,8 @@ import org.junit.runners.Suite
     RoomDatabaseExtensionsInstrumentedTest::class,
     InputStreamExtensionsInstrumentedTest::class,
     AttributeSetExtensionsInstrumentedTest::class,
-    UriExtensionsInstrumentedTest::class
+    UriExtensionsInstrumentedTest::class,
+    DocumentFileExtensionsInstrumentedTest::class,
+    CryptoUtilsInstrumentedTest::class
 )
 class ExtensionsInstrumentedTests

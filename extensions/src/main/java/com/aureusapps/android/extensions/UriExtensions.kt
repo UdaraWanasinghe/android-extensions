@@ -17,8 +17,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.security.DigestInputStream
-import java.security.MessageDigest
 
 /**
  * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
@@ -339,18 +337,16 @@ fun Uri.fileExists(context: Context, fileName: String): Boolean {
 }
 
 /**
- * Copies the content from the source Uri to the destination Uri.
+ * Opens an input stream for reading the content represented by the Uri.
  *
- * @param context The context used to open InputStream and OutputStream from the Uris.
- * @param dstUri The destination Uri to write the content to.
+ * @param context The context used for accessing content resolver.
  *
- * @return The total number of bytes written, or -1 if an error occurred.
+ * @return An InputStream for reading the content, or null if the content cannot be opened.
  */
-fun Uri.copyTo(context: Context, dstUri: Uri): Int {
+@SuppressLint("Recycle")
+fun Uri.openInputStream(context: Context): InputStream? {
     var inputStream: InputStream? = null
-    var outputStream: OutputStream? = null
     try {
-        outputStream = context.contentResolver.openOutputStream(dstUri)
         when (scheme) {
             ContentResolver.SCHEME_CONTENT,
             ContentResolver.SCHEME_FILE,
@@ -382,16 +378,34 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
             }
         }
 
-        var bytesWritten = 0
+    } catch (_: Exception) {
+
+    }
+    return inputStream
+}
+
+/**
+ * Copies the content from the source Uri to the destination Uri.
+ *
+ * @param context The context used to open InputStream and OutputStream from the Uris.
+ * @param dstUri The destination Uri to write the content to.
+ *
+ * @return The total number of bytes written, or -1 if an error occurred.
+ */
+fun Uri.copyTo(context: Context, dstUri: Uri): Int {
+    var inputStream: InputStream? = null
+    var outputStream: OutputStream? = null
+    var bytesWritten = -1
+    try {
+        outputStream = context.contentResolver.openOutputStream(dstUri)
+        inputStream = openInputStream(context)
+
         if (inputStream != null && outputStream != null) {
-            val buffer = ByteArray(8192)
-            var bytesRead: Int
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+            bytesWritten = inputStream.readBytes { buffer, bytesRead ->
                 outputStream.write(buffer, 0, bytesRead)
-                bytesWritten += bytesRead
+                true
             }
             outputStream.flush()
-            return bytesWritten
         }
 
     } catch (_: Exception) {
@@ -400,7 +414,7 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
         inputStream?.close()
         outputStream?.close()
     }
-    return -1
+    return bytesWritten
 }
 
 /**
@@ -412,45 +426,17 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
  */
 fun Uri.readBytes(context: Context): ByteArray? {
     var inputStream: InputStream? = null
+    var bytes: ByteArray? = null
     try {
-        when (scheme) {
-            ContentResolver.SCHEME_CONTENT,
-            ContentResolver.SCHEME_FILE,
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                inputStream = context.contentResolver.openInputStream(this)
-            }
-
-            "http",
-            "https" -> {
-                val request = Request.Builder()
-                    .url(toString())
-                    .build()
-                val client = OkHttpClient
-                    .Builder()
-                    .build()
-                val response = client
-                    .newCall(request)
-                    .execute()
-                val body = response.body
-                if (body != null) {
-                    if (response.code == 200) {
-                        inputStream = body.byteStream()
-                    } else {
-                        response.closeQuietly()
-                    }
-                }
-            }
-        }
-        if (inputStream != null) {
-            return inputStream.readBytes()
-        }
+        inputStream = openInputStream(context)
+        bytes = inputStream?.readBytes()
 
     } catch (_: Exception) {
 
     } finally {
         inputStream?.close()
     }
-    return null
+    return bytes
 }
 
 /**
@@ -468,83 +454,3 @@ fun Uri.readToBuffer(context: Context): ByteBuffer? = readBytes(context)
             .put(bytes)
             .position(0) as ByteBuffer
     }
-
-/**
- * Generates a hash from the content of the Uri.
- *
- * @param context The context used to open an InputStream from the Uri.
- * @param algorithm The hash algorithm to use (e.g., "MD5" or "SHA-1").
- *
- * @return The hash string or null if an error occurred.
- */
-fun Uri.generateHash(context: Context, algorithm: String): String? {
-    var inputStream: InputStream? = null
-    try {
-        when (scheme) {
-            ContentResolver.SCHEME_CONTENT,
-            ContentResolver.SCHEME_FILE,
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
-                inputStream = context.contentResolver.openInputStream(this)
-            }
-
-            "http",
-            "https" -> {
-                val request = Request.Builder()
-                    .url(toString())
-                    .build()
-                val client = OkHttpClient
-                    .Builder()
-                    .build()
-                val response = client
-                    .newCall(request)
-                    .execute()
-                val body = response.body
-                if (body != null) {
-                    if (response.code == 200) {
-                        inputStream = body.byteStream()
-                    } else {
-                        response.closeQuietly()
-                    }
-                }
-            }
-        }
-
-        if (inputStream != null) {
-            val digest = MessageDigest.getInstance(algorithm)
-            val digestInputStream = DigestInputStream(inputStream, digest)
-            val buffer = ByteArray(8192)
-            while (digestInputStream.read(buffer) != -1) {
-                // Nothing to do here
-            }
-            val sha1Bytes = digest.digest()
-            val builder = StringBuilder()
-            for (byte in sha1Bytes) {
-                builder.append(String.format("%02x", byte))
-            }
-            return builder.toString()
-        }
-
-    } catch (_: Exception) {
-
-    } finally {
-        inputStream?.close()
-    }
-    return null
-}
-
-/**
- * Generates an MD5 hash from the content of the Uri.
- *
- * @param context The context used to open an InputStream from the Uri.
- *
- * @return The MD5 hash string or null if an error occurred.
- */
-fun Uri.generateMD5(context: Context): String? = generateHash(context, "MD5")
-
-/**
- * Generates a SHA-1 hash from the content of the Uri.
- *
- * @param context The context used to open an InputStream from the Uri.
- * @return The SHA-1 hash string or null if an error occurred.
- */
-fun Uri.generateSHA1(context: Context): String? = generateHash(context, "SHA-1")

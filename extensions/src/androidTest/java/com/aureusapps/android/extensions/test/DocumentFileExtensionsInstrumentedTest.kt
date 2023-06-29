@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.test.utils.FileGenerator
+import com.aureusapps.android.extensions.test.utils.TestHelpers
 import com.aureusapps.android.extensions.walkBottomUp
 import com.aureusapps.android.extensions.walkTopDown
 import org.junit.Assert
@@ -22,25 +22,25 @@ class DocumentFileExtensionsInstrumentedTest {
     fun test_walkThroughFiles() {
         val rootName = UUID.randomUUID().toString()
         val root = File(context.cacheDir, rootName)
-        FileGenerator.generate(
+        TestHelpers.generateFiles(
             root,
             listOf(
-                FileGenerator.FileNode("1"),
-                FileGenerator.DirectoryNode(
+                TestHelpers.FileNode("1"),
+                TestHelpers.DirectoryNode(
                     "2",
                     listOf(
-                        FileGenerator.FileNode("4"),
-                        FileGenerator.DirectoryNode(
+                        TestHelpers.FileNode("4"),
+                        TestHelpers.DirectoryNode(
                             "5",
                             listOf(
-                                FileGenerator.FileNode("7"),
-                                FileGenerator.FileNode("8")
+                                TestHelpers.FileNode("7"),
+                                TestHelpers.FileNode("8")
                             )
                         ),
-                        FileGenerator.FileNode("6")
+                        TestHelpers.FileNode("6")
                     )
                 ),
-                FileGenerator.FileNode("3")
+                TestHelpers.FileNode("3")
             )
         )
         val document = DocumentFile.fromFile(root)
