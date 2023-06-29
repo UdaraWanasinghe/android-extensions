@@ -469,7 +469,6 @@ fun Uri.openInputStream(context: Context): InputStream? {
  *
  * @param context The context used to open InputStream and OutputStream from the Uris.
  * @param dstUri The destination Uri to write the content to.
- *
  * @return The total number of bytes written, or -1 if an error occurred.
  */
 fun Uri.copyTo(context: Context, dstUri: Uri): Int {
