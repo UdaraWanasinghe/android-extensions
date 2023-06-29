@@ -471,6 +471,7 @@ fun Uri.openInputStream(context: Context): InputStream? {
  * @param dstUri The destination Uri to write the content to.
  * @return The total number of bytes written, or -1 if an error occurred.
  */
+@SuppressLint("Recycle")
 fun Uri.copyTo(context: Context, dstUri: Uri): Int {
     var inputStream: InputStream? = null
     var outputStream: OutputStream? = null
@@ -490,8 +491,8 @@ fun Uri.copyTo(context: Context, dstUri: Uri): Int {
     } catch (_: Exception) {
 
     } finally {
-        inputStream?.close()
-        outputStream?.close()
+        inputStream?.closeQuietly()
+        outputStream?.closeQuietly()
     }
     return bytesWritten
 }
@@ -513,9 +514,35 @@ fun Uri.readBytes(context: Context): ByteArray? {
     } catch (_: Exception) {
 
     } finally {
-        inputStream?.close()
+        inputStream?.closeQuietly()
     }
     return bytes
+}
+
+/**
+ * Writes the given byte array to the content represented by the Uri.
+ *
+ * @param context The context used for accessing content resolver.
+ * @param bytes The byte array to write.
+ * @return `true` if the write operation is successful, `false` otherwise.
+ */
+@SuppressLint("Recycle")
+fun Uri.writeBytes(context: Context, bytes: ByteArray): Boolean {
+    var result = false
+    var outputStream: OutputStream? = null
+    try {
+        outputStream = context.contentResolver.openOutputStream(this)
+            ?: throw NullPointerException("Could not open the output stream")
+        outputStream.write(bytes)
+        outputStream.flush()
+        result = true
+
+    } catch (_: Exception) {
+
+    } finally {
+        outputStream?.closeQuietly()
+    }
+    return result
 }
 
 /**

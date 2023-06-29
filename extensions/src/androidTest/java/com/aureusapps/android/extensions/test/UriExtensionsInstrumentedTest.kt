@@ -25,6 +25,7 @@ import com.aureusapps.android.extensions.readToBuffer
 import com.aureusapps.android.extensions.test.utils.TestHelpers
 import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
+import com.aureusapps.android.extensions.writeBytes
 import com.squareup.okhttp.mockwebserver.MockResponse
 import com.squareup.okhttp.mockwebserver.MockWebServer
 import okio.Buffer
@@ -299,6 +300,19 @@ class UriExtensionsInstrumentedTest {
             val string = String(bytes)
             Assert.assertEquals(fileContent, string)
         }
+    }
+
+    @Test
+    fun test_writeBytes() {
+        val tempFile = File.createTempFile("text", null)
+        val sampleText = "Sample"
+        val written = tempFile
+            .toUri()
+            .writeBytes(context, sampleText.toByteArray())
+        Assert.assertTrue(written)
+        val text = tempFile.readText()
+        Assert.assertEquals(sampleText, text)
+        tempFile.delete()
     }
 
     @Test
