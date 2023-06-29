@@ -304,6 +304,40 @@ fun Uri.delete(context: Context): Boolean {
 }
 
 /**
+ * Finds a file with the given name within the directory represented by the Uri.
+ *
+ * @param context The context used for accessing content resolver.
+ * @param fileName The name of the file to search for.
+ * @return The Uri of the found file, or null if the file is not found or an error occurs.
+ */
+fun Uri.findFile(context: Context, fileName: String): Uri? {
+    var uri: Uri? = null
+    try {
+        when {
+            isFileUri -> {
+                uri = path
+                    ?.let { File(it) }
+                    ?.listFiles()
+                    ?.firstOrNull { it.name == fileName }
+                    ?.toUri()
+            }
+
+            isTreeUri -> {
+                uri = DocumentFile.fromTreeUri(context, this)
+                    ?.findFile(fileName)
+                    ?.uri
+            }
+        }
+
+    } catch (_: Exception) {
+
+    } finally {
+
+    }
+    return uri
+}
+
+/**
  * Checks if a file with the given name exists within the directory specified by the Uri.
  *
  * @param context The android context.
