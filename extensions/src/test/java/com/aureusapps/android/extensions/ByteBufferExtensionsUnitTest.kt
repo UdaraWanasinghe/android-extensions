@@ -5,7 +5,7 @@ import org.junit.Before
 import org.junit.Test
 import java.nio.ByteBuffer
 
-class ByteBufferExtensionsTest {
+class ByteBufferExtensionsUnitTest {
 
     private lateinit var buffer: ByteBuffer
 
