@@ -40,6 +40,24 @@ object CryptoUtils {
         }
         return hash
     }
+    
+    /**
+     * Generates a hash value for the given byte array using the specified algorithm.
+     *
+     * @param buffer The input byte array for which the hash needs to be generated.
+     * @param algorithm The hash algorithm to use (e.g., "MD5", "SHA-1", etc.).
+     * @return The hash value of the input byte array as a string.
+     */
+    fun generateHash(buffer: ByteArray, algorithm: String): String {
+        val digest = MessageDigest.getInstance(algorithm)
+        digest.update(buffer)
+        val hashBytes = digest.digest()
+        val builder = StringBuilder()
+        for (byte in hashBytes) {
+            builder.append(String.format("%02x", byte))
+        }
+        return builder.toString()
+    }
 
     /**
      * Generates an MD5 hash value for the content represented by the Uri.
@@ -58,5 +76,21 @@ object CryptoUtils {
      * @return The SHA-1 hash value as a hexadecimal string, or null if the hash generation fails.
      */
     fun generateSHA1(context: Context, uri: Uri): String? = generateHash(context, uri, "SHA-1")
+
+    /**
+     * Generates an MD5 hash value for the given byte array.
+     *
+     * @param buffer The input byte array for which the MD5 hash needs to be generated.
+     * @return The MD5 hash value of the input byte array as a string.
+     */
+    fun generateMD5(buffer: ByteArray): String = generateHash(buffer, "MD5")
+
+    /**
+     * Generates a SHA-1 hash value for the given byte array.
+     *
+     * @param buffer The input byte array for which the SHA-1 hash needs to be generated.
+     * @return The SHA-1 hash value of the input byte array as a string.
+     */
+    fun generateSHA1(buffer: ByteArray): String = generateHash(buffer, "SHA-1")
 
 }
