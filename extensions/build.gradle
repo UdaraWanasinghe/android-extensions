@@ -29,7 +29,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
-    
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -56,6 +56,7 @@ dependencies {
     implementation libs.okhttp
     implementation libs.activity.ktx
     implementation libs.documentfile
+    implementation libs.espresso.core
 
     testImplementation libs.junit
 
