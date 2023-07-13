@@ -14,16 +14,11 @@ import kotlinx.coroutines.flow.flow
 fun <T, R> Flow<T>.scanNotNull(
     initial: R,
     operation: suspend (accumulator: R, value: T) -> R?
-): Flow<R> {
-    return flow {
-        var accumulator: R = initial
-        emit(initial)
-        collect { value ->
-            val newValue = operation(accumulator, value)
-            if (newValue != null) {
-                accumulator = newValue
-                emit(newValue)
-            }
-        }
+): Flow<R> = flow {
+    var accumulator: R = initial
+    emit(initial)
+    collect { value ->
+        accumulator = operation(accumulator, value) ?: return@collect
+        emit(accumulator)
     }
 }
