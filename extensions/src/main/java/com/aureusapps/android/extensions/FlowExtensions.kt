@@ -36,12 +36,12 @@ fun <T, R> Flow<T>.scanNotNull(
  *
  * For example:
  * ```
- * flow.scanTransformed(0) { acc, value -> emit(acc); emit(acc + value) }
+ * flow.scanTransform(0) { acc, value -> emit(acc); emit(acc + value) }
  * ```
  * will produce `[0, 0, 1, 1, 3, 3, 6]`
  */
 @OptIn(ExperimentalTypeInference::class)
-fun <T, R> Flow<T>.scanTransformed(
+fun <T, R> Flow<T>.scanTransform(
     initial: R,
     @BuilderInference operation: suspend FlowCollector<R>.(accumulator: R, value: T) -> Unit
 ): Flow<R> = flow {

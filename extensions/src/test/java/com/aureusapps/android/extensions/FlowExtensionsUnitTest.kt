@@ -22,7 +22,7 @@ class FlowExtensionsUnitTest {
     @Test
     fun testScanTransformedWithInitial() = runTest {
         val flow = flowOf(1, 2, 3)
-        val result = flow.scanTransformed(0) { acc, value -> emit(acc); emit(acc + value) }.toList()
+        val result = flow.scanTransform(0) { acc, value -> emit(acc); emit(acc + value) }.toList()
         assertEquals(listOf(0, 0, 1, 1, 3, 3, 6), result)
     }
 
