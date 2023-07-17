@@ -6,14 +6,10 @@ plugins {
     alias(libs.plugins.io.github.gradle.nexus.publish.plugin) apply true
 }
 
-ext {
-    version_code = 3
-    version_name = '1.0.2'
+project.extra.apply {
+    set("version_code", 3)
+    set("version_name", "1.0.2")
 }
 
-task clean(type: Delete) {
-    delete rootProject.buildDir
-}
-
-apply from: "${rootDir}/scripts/publish-root.gradle"
-apply from: "${rootDir}/scripts/update-version.gradle"
+apply(from = "${rootDir}/scripts/publish-root.gradle")
+apply(from = "${rootDir}/scripts/update-version.gradle")

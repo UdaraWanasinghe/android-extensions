@@ -8,8 +8,8 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     versionCatalogs {
-        libs {
-            from('com.aureusapps.android:version-catalog:1.0.0')
+        create("libs") {
+            from("com.aureusapps.android:version-catalog:1.0.0")
         }
     }
     repositories {
@@ -18,6 +18,7 @@ dependencyResolutionManagement {
         mavenLocal()
     }
 }
+
 rootProject.name = "android-extensions"
-include ':example'
-include ':extensions'
+include(":example")
+include(":extensions")

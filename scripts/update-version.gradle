@@ -25,7 +25,7 @@ abstract class UpdateVersionTask extends DefaultTask {
     }
 
     private void updateRootProjectBuildGradle() {
-        def file = project.file('build.gradle')
+        def file = project.file('build.gradle.kts')
         if (file.exists()) {
             def text = file.text
             def pattern = /version_code = \d+/
@@ -40,5 +40,5 @@ abstract class UpdateVersionTask extends DefaultTask {
 
 tasks.register("updateVersion", UpdateVersionTask) {
     group = "Version Control"
-    description = "Updates the version code and name in the root project build.gradle file and README.md file."
+    description = "Updates the version code and name in the root project build.gradle.kts file and README.md file."
 }
