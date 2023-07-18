@@ -10,9 +10,9 @@ Useful extension functions and utility classes for android development.
 
 Add the following dependency to your project's `build.gradle` file.
 
-```groovy
+```kotlin
 dependencies {
-    implementation 'com.aureusapps.android:extensions:1.0.2'
+    implementation("com.aureusapps.android:extensions:1.0.2")
 }
 ```
 

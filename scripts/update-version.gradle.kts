@@ -1,12 +1,17 @@
 abstract class UpdateVersionTask : DefaultTask() {
 
-    @get:Option(option = "code", description = "The version code to set.")
-    @get:Input
-    abstract val versionCode: String
+    private var code: String = ""
+    private var name: String = ""
 
-    @get:Option(option = "name", description = "The version name to set.")
-    @get:Input
-    abstract val versionName: String
+    @Option(option = "code", description = "The version code to set.")
+    fun setVersionCode(code: String) {
+        this.code = code
+    }
+
+    @Option(option = "name", description = "The version name to set.")
+    fun setVersionName(name: String) {
+        this.name = name
+    }
 
     @TaskAction
     fun updateVersion() {
@@ -19,7 +24,7 @@ abstract class UpdateVersionTask : DefaultTask() {
         if (file.exists()) {
             var text = file.readText()
             val pattern = Regex("\\d+.\\d+.\\d+")
-            text = pattern.replace(text, versionName)
+            text = pattern.replace(text, name)
             file.writeText(text)
         }
     }
@@ -28,10 +33,10 @@ abstract class UpdateVersionTask : DefaultTask() {
         val file = project.file("build.gradle.kts")
         if (file.exists()) {
             var text = file.readText()
-            var pattern = Regex("[\"VERSION_CODE\"] = \\d+")
-            text = pattern.replace(text, "[\"VERSION_CODE\"] = $versionCode")
-            pattern = Regex("[\"VERSION_NAME\"] = \"\\d+.\\d+.\\d+\"")
-            text = pattern.replace(text, "[\"VERSION_NAME\"] = \"$versionName\"")
+            var pattern = Regex("\\[\"VERSION_CODE\"] = \\d+")
+            text = pattern.replace(text, "[\"VERSION_CODE\"] = $code")
+            pattern = Regex("\\[\"VERSION_NAME\"] = \"\\d+.\\d+.\\d+\"")
+            text = pattern.replace(text, "\\[\"VERSION_NAME\"] = \"$name\"")
             file.writeText(text)
         }
     }
