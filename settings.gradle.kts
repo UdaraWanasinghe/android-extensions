@@ -20,5 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "android-extensions"
-include(":example")
-include(":extensions")
+include("extensions", "example")
