@@ -5,19 +5,20 @@ import com.aureusapps.gradle.PublishLibraryConstants.GROUP_ID
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.aureusapps.gradle.update-version")
 }
 
-val groupId = findProperty(GROUP_ID)
+val groupIdValue = findProperty(GROUP_ID)
 
 android {
-    namespace = "$groupId.extensions"
+    namespace = "$groupIdValue.extensions"
     compileSdk = 33
     defaultConfig {
-        applicationId = "$groupId.extensions"
+        applicationId = "$groupIdValue.extensions"
         minSdk = 21
         targetSdk = 33
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

@@ -10,10 +10,10 @@ plugins {
     kotlin("kapt")
 }
 
-val groupIdProperty = findProperty(GROUP_ID)?.toString()
+val groupIdValue = findProperty(GROUP_ID).toString()
 
 android {
-    namespace = "$groupIdProperty.extensions"
+    namespace = "$groupIdValue.extensions"
     compileSdk = 33
     defaultConfig {
         minSdk = 21
@@ -44,7 +44,7 @@ android {
 }
 
 publishLibrary {
-    groupId = groupIdProperty
+    groupId = groupIdValue
     artifactId = "extensions"
     versionName = "1.0.2"
     libName = "Extensions"
