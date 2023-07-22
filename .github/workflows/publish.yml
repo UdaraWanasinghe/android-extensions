@@ -17,20 +17,31 @@ jobs:
           distribution: adopt
           java-version: 17
 
-      - name: Check out version-catalog
+      - name: Check out android-version-catalog
         uses: actions/checkout@v3
         with:
           repository: UdaraWanasinghe/android-version-catalog
           token: ${{ secrets.VERSION_CATALOG_ACCESS_TOKEN }}
-          path: version-catalog
+          path: android-version-catalog
+
+      - name: Check out common-gradle-plugins
+        uses: actions/checkout@v3
+        with:
+          repository: UdaraWanasinghe/common-gradle-plugins
+          token: ${{ secrets.COMMON_GRADLE_PLUGINS_ACCESS_TOKEN }}
+          path: common-gradle-plugins
 
       - name: Check out android-extensions
         uses: actions/checkout@v3
         with:
           path: android-extensions
 
-      - name: Publish version-catalog
-        working-directory: version-catalog
+      - name: Publish android-version-catalog
+        working-directory: android-version-catalog
+        run: ./gradlew publishToMavenLocal
+
+      - name: Publish common-gradle-plugins
+        working-directory: common-gradle-plugins
         run: ./gradlew publishToMavenLocal
 
       - name: Release build android-extensions
@@ -39,7 +50,7 @@ jobs:
 
       - name: Publish android-extensions to MavenCentral
         working-directory: android-extensions
-        run: ./gradlew publishReleasePublicationToSonatypeRepository --max-workers 1 closeAndReleaseSonatypeStagingRepository
+        run: ./gradlew publishReleasePublicationToSonatypeRepository --max-workers 1
         env:
           OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
