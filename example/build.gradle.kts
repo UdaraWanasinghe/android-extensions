@@ -1,17 +1,23 @@
+@file:Suppress("UnstableApiUsage")
+
+import com.aureusapps.gradle.PublishLibraryConstants.GROUP_ID
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
+val groupId = findProperty(GROUP_ID)
+
 android {
-    namespace = "com.aureusapps.android.extensions"
+    namespace = "$groupId.extensions"
     compileSdk = 33
     defaultConfig {
-        applicationId = "com.aureusapps.android.extensions"
+        applicationId = "$groupId.extensions"
         minSdk = 21
         targetSdk = 33
-        versionCode = rootProject.extra["VERSION_CODE"] as Int
-        versionName = rootProject.extra["VERSION_NAME"] as String
+        versionCode = 1
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

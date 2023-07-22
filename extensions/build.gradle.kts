@@ -1,21 +1,22 @@
+@file:Suppress("UnstableApiUsage")
+
+import com.aureusapps.gradle.PublishLibraryConstants.GROUP_ID
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    `maven-publish`
+    id("com.aureusapps.gradle.update-version")
+    id("com.aureusapps.gradle.publish-library")
     kotlin("kapt")
-    signing
 }
 
-project.extra["PUBLISH_GROUP_ID"] = "com.aureusapps.android"
-project.extra["PUBLISH_VERSION"] = rootProject.extra["VERSION_NAME"]
-project.extra["PUBLISH_ARTIFACT_ID"] = "extensions"
+val groupIdProperty = findProperty(GROUP_ID)?.toString()
 
 android {
-    namespace = "com.aureusapps.android.extensions"
+    namespace = "$groupIdProperty.extensions"
     compileSdk = 33
     defaultConfig {
         minSdk = 21
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -42,6 +43,22 @@ android {
     }
 }
 
+publishLibrary {
+    groupId = groupIdProperty
+    artifactId = "extensions"
+    versionName = "1.0.2"
+    libName = "Extensions"
+    libDescription = "Useful extension functions and utility classes for android development."
+    libUrl = "https://github.com/UdaraWanasinghe/android-extensions"
+    licenseName = "MIT License"
+    licenseUrl = "https://github.com/UdaraWanasinghe/android-extensions/blob/main/LICENSE"
+    devId = "UdaraWanasinghe"
+    devName = "Udara Wanasinghe"
+    devEmail = "udara.developer@gmail.com"
+    scmConnection = "scm:git:github.com/UdaraWanasinghe/android-extensions.git"
+    scmDevConnection = "scm:git:ssh://github.com/UdaraWanasinghe/android-extensions.git"
+}
+
 dependencies {
     implementation(libs.core.ktx)
     implementation(libs.appcompat)
@@ -64,5 +81,3 @@ dependencies {
     androidTestImplementation(libs.okhttp)
     androidTestImplementation(libs.okhttp.mockwebserver)
 }
-
-apply(from = "$rootDir/scripts/publish-module.gradle.kts")
