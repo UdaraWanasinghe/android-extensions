@@ -58,4 +58,4 @@ jobs:
 
       - name: Publish android-extensions to MavenCentral
         working-directory: android-extensions
-        run: ./gradlew publishReleasePublicationToSonatypeRepository --max-workers 1
+        run: ./gradlew publishReleasePublicationToSonatypeRepository --max-workers 1 closeAndReleaseSonatypeStagingRepository
