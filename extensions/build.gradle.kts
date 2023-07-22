@@ -55,8 +55,8 @@ publishLibrary {
     devId = "UdaraWanasinghe"
     devName = "Udara Wanasinghe"
     devEmail = "udara.developer@gmail.com"
-    scmConnection = "scm:git:github.com/UdaraWanasinghe/android-extensions.git"
-    scmDevConnection = "scm:git:ssh://github.com/UdaraWanasinghe/android-extensions.git"
+    scmConnection = "scm:git:https://github.com/UdaraWanasinghe/android-extensions.git"
+    scmDevConnection = "scm:git:ssh://git@github.com/UdaraWanasinghe/android-extensions.git"
 }
 
 dependencies {
