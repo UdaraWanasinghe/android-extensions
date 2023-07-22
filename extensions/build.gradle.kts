@@ -46,7 +46,7 @@ android {
 publishLibrary {
     groupId = groupIdValue
     artifactId = "extensions"
-    versionName = "1.0.2"
+    versionName = "1.0.3"
     libName = "Extensions"
     libDescription = "Useful extension functions and utility classes for android development."
     libUrl = "https://github.com/UdaraWanasinghe/android-extensions"

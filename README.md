@@ -1,7 +1,7 @@
 ## Android Extensions
 
 [![Publish](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml/badge.svg)](https://github.com/UdaraWanasinghe/android-extensions/actions/workflows/publish.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/extensions/1.0.2)
+[![Maven Central](https://img.shields.io/maven-central/v/com.aureusapps.android/extensions)](https://central.sonatype.com/artifact/com.aureusapps.android/extensions/1.0.3)
 [![javadoc](https://javadoc.io/badge2/com.aureusapps.android/extensions/javadoc.svg)](https://javadoc.io/doc/com.aureusapps.android/extensions)
 
 Useful extension functions and utility classes for android development.
@@ -12,7 +12,7 @@ Add the following dependency to your project's `build.gradle` file.
 
 ```kotlin
 dependencies {
-    implementation("com.aureusapps.android:extensions:1.0.2")
+    implementation("com.aureusapps.android:extensions:1.0.3")
 }
 ```
 
