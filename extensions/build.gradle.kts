@@ -10,10 +10,16 @@ plugins {
     kotlin("kapt")
 }
 
-val groupIdValue = findProperty(GROUP_ID).toString()
+class Props(project: Project) {
+    val groupId = project.findProperty(GROUP_ID).toString()
+    val artifactId = "extensions"
+    val versionName = "1.0.3"
+}
+
+val props = Props(project)
 
 android {
-    namespace = "$groupIdValue.extensions"
+    namespace = "${props.groupId}.${props.artifactId}"
     compileSdk = 33
     defaultConfig {
         minSdk = 21
@@ -44,19 +50,19 @@ android {
 }
 
 publishLibrary {
-    groupId = groupIdValue
-    artifactId = "extensions"
-    versionName = "1.0.3"
-    libName = "Extensions"
-    libDescription = "Useful extension functions and utility classes for android development."
-    libUrl = "https://github.com/UdaraWanasinghe/android-extensions"
-    licenseName = "MIT License"
-    licenseUrl = "https://github.com/UdaraWanasinghe/android-extensions/blob/main/LICENSE"
-    devId = "UdaraWanasinghe"
-    devName = "Udara Wanasinghe"
-    devEmail = "udara.developer@gmail.com"
-    scmConnection = "scm:git:https://github.com/UdaraWanasinghe/android-extensions.git"
-    scmDevConnection = "scm:git:ssh://git@github.com/UdaraWanasinghe/android-extensions.git"
+    groupId.set(props.groupId)
+    artifactId.set(props.artifactId)
+    versionName.set(props.versionName)
+    libName.set("Extensions")
+    libDescription.set("Useful extension functions and utility classes for android development.")
+    libUrl.set("https://github.com/UdaraWanasinghe/android-extensions")
+    licenseName.set("MIT License")
+    licenseUrl.set("https://github.com/UdaraWanasinghe/android-extensions/blob/main/LICENSE")
+    devId.set("UdaraWanasinghe")
+    devName.set("Udara Wanasinghe")
+    devEmail.set("udara.developer@gmail.com")
+    scmConnection.set("scm:git:https://github.com/UdaraWanasinghe/android-extensions.git")
+    scmDevConnection.set("scm:git:ssh://git@github.com/UdaraWanasinghe/android-extensions.git")
 }
 
 dependencies {

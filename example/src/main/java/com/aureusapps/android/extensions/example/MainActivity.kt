@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions
+package com.aureusapps.android.extensions.example
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

@@ -8,17 +8,24 @@ plugins {
     id("com.aureusapps.gradle.update-version")
 }
 
-val groupIdValue = findProperty(GROUP_ID)
+class Props(project: Project) {
+    val groupId = project.findProperty(GROUP_ID).toString()
+    val artifactId = "extensions.example"
+    val versionCode = 4
+    val versionName = "1.0.3"
+}
+
+val props = Props(project)
 
 android {
-    namespace = "$groupIdValue.extensions"
+    namespace = "${props.groupId}.${props.artifactId}"
     compileSdk = 33
     defaultConfig {
-        applicationId = "$groupIdValue.extensions"
+        applicationId = "${props.groupId}.${props.artifactId}"
         minSdk = 21
         targetSdk = 33
-        versionCode = 4
-        versionName = "1.0.3"
+        versionCode = props.versionCode
+        versionName = props.versionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
