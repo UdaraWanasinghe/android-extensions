@@ -13,6 +13,7 @@ object TestHelpers {
         for (node in nodes) {
             val file = File(root, node.name)
             if (node is DirectoryNode) {
+                file.mkdirs()
                 generateFiles(file, node.children)
             } else {
                 file.createNewFile()
