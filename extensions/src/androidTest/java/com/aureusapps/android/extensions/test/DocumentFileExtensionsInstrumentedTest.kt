@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.copyRecursively
+import com.aureusapps.android.extensions.copyTo
 import com.aureusapps.android.extensions.test.utils.TestHelpers
 import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
@@ -76,18 +76,28 @@ class DocumentFileExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_copyRecursively() {
-        val targetDir = File(context.cacheDir, "temp")
-        targetDir.mkdirs()
-        val files = createTempFileTree(targetDir)
-        val srcDocumentFile = DocumentFile.fromFile(files.first().first)
-        val targetDocumentFile = DocumentFile.fromFile(targetDir)
-        val copyResult = srcDocumentFile.copyRecursively(context, targetDocumentFile)
-        assertTrue(copyResult)
+    fun test_copyTo() {
+        val targetParent = Files.createTempDirectory("tmp").toFile()
+        targetParent.mkdirs()
+        val files = generateTempFiles(targetParent)
+        try {
+            val srcDocumentFile = DocumentFile.fromFile(files.first().first)
+            val targetDocumentFile = DocumentFile.fromFile(targetParent)
+            val copyResult = srcDocumentFile.copyTo(context, targetDocumentFile)
+            assertTrue(copyResult)
+            for (file in files) {
+                val (_, dst) = file
+                assertTrue("Destination does not exists: ${dst.absolutePath}", dst.exists())
+            }
+        } finally {
+            targetParent.deleteRecursively()
+            val (root, _) = files.first()
+            root.deleteRecursively()
+        }
     }
 
-    private fun createTempFileTree(targetDir: File): List<Pair<File, File>> {
-        val root = Files.createTempDirectory("root").toFile()
+    private fun generateTempFiles(targetParent: File): List<Pair<File, File>> {
+        val root = Files.createTempDirectory("tmp").toFile()
         TestHelpers.generateFiles(
             root,
             listOf(
@@ -110,21 +120,15 @@ class DocumentFileExtensionsInstrumentedTest {
         zip1.writeText("zip1")
         val dir1 = File(root, "dir1")
         val text2 = File(dir1, "text2.txt")
-        val text2TargetParent = File(targetDir, "dir1")
+        val targetDir = File(targetParent, root.name)
         return listOf(
             root to targetDir,
             file1 to File(targetDir, "file1"),
             text1 to File(targetDir, "text1.txt"),
             zip1 to File(targetDir, "zip1.tar.gz"),
             dir1 to File(targetDir, "dir1"),
-            text2 to File(text2TargetParent, "text2.txt")
+            text2 to File(targetDir, "dir1/text2.txt")
         )
-    }
-
-    private fun deleteCreatedFiles(list: List<Pair<File, File>>) {
-        val root = list.first()
-        root.first.deleteRecursively()
-        root.second.deleteRecursively()
     }
 
 }

@@ -23,14 +23,14 @@ object TestHelpers {
 
     @JvmStatic
     fun getAndroidResourceUri(context: Context, resId: Int): Uri {
-        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
-        val packageName = context.resources.getResourcePackageName(resId)
-        val typeName = context.resources.getResourceTypeName(resId)
-        val entryName = context.resources.getResourceEntryName(resId)
         // Accepted Uris
         // android.resource://{packageName}/{resId}
         // android.resource://{packageName}/{typeName}/{resId}
         // android.resource://{packageName}/{typeName}/{entryName}
+        val scheme = ContentResolver.SCHEME_ANDROID_RESOURCE
+        val packageName = context.resources.getResourcePackageName(resId)
+        val typeName = context.resources.getResourceTypeName(resId)
+        val entryName = context.resources.getResourceEntryName(resId)
         return Uri.parse("$scheme://$packageName/$typeName/$entryName")
     }
 

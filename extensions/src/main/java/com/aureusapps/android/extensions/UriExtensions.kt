@@ -1,16 +1,26 @@
 package com.aureusapps.android.extensions
 
 import android.annotation.SuppressLint
-import android.content.ContentResolver
+import android.content.ContentResolver.SCHEME_ANDROID_RESOURCE
+import android.content.ContentResolver.SCHEME_CONTENT
+import android.content.ContentResolver.SCHEME_FILE
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.provider.DocumentsContract
 import android.text.TextUtils
+import android.webkit.MimeTypeMap
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.internal.closeQuietly
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileNotFoundException
+import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
@@ -23,15 +33,38 @@ import java.nio.ByteOrder
  */
 val Uri.isTreeUri: Boolean
     get() {
-        val paths = pathSegments
-        return paths.size >= 2 && "tree" == paths[0]
+        // content://com.example/tree/12/document/24/
+        // content://com.example/tree/12/document/24/children/
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            DocumentsContract.isTreeUri(this)
+        } else {
+            false
+        }
     }
+
+fun Uri.isRootUri(context: Context): Boolean {
+    // content://com.example/root/
+    // content://com.example/root/sdcard/
+    // content://com.example/root/sdcard/recent/
+    // content://com.example/root/sdcard/search/?query=pony
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        DocumentsContract.isRootUri(context, this)
+    } else {
+        false
+    }
+}
+
+fun Uri.isDocumentUri(context: Context): Boolean {
+    // content://com.example/document/12/
+    // content://com.example/tree/12/document/24/
+    return DocumentsContract.isDocumentUri(context, this)
+}
 
 /**
  * Returns true if the uri is a file uri, otherwise false.
  */
 val Uri.isFileUri: Boolean
-    get() = scheme == ContentResolver.SCHEME_FILE
+    get() = scheme == SCHEME_FILE
 
 /**
  * Retrieves the file name of the content represented by the Uri.
@@ -45,11 +78,11 @@ fun Uri.fileName(context: Context): String? {
     var fileName: String? = null
     try {
         when (scheme) {
-            ContentResolver.SCHEME_CONTENT -> {
+            SCHEME_CONTENT -> {
                 fileName = DocumentFile.fromSingleUri(context, this)?.name
             }
 
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+            SCHEME_ANDROID_RESOURCE -> {
                 val segments = pathSegments
                 if (segments.size >= 1) {
                     val lastSegment = segments.last()
@@ -64,7 +97,7 @@ fun Uri.fileName(context: Context): String? {
                 }
             }
 
-            ContentResolver.SCHEME_FILE -> {
+            SCHEME_FILE -> {
                 fileName = lastPathSegment
             }
 
@@ -252,19 +285,19 @@ fun Uri.exists(context: Context): Boolean {
     var exists = false
     try {
         when (scheme) {
-            ContentResolver.SCHEME_FILE -> {
+            SCHEME_FILE -> {
                 exists = path
                     ?.let { File(it) }
                     ?.exists() ?: false
             }
 
-            ContentResolver.SCHEME_CONTENT -> {
+            SCHEME_CONTENT -> {
                 exists = DocumentFile
                     .fromSingleUri(context, this)
                     ?.exists() ?: false
             }
 
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+            SCHEME_ANDROID_RESOURCE -> {
                 val segments = pathSegments
                 if (segments.size >= 1) {
                     val lastSegment = segments.last()
@@ -324,13 +357,13 @@ fun Uri.delete(context: Context): Boolean {
     var deleted = false
     try {
         when {
-            ContentResolver.SCHEME_FILE == scheme -> {
+            SCHEME_FILE == scheme -> {
                 deleted = path
                     ?.let { File(it) }
                     ?.deleteRecursively() ?: false
             }
 
-            ContentResolver.SCHEME_CONTENT == scheme -> {
+            SCHEME_CONTENT == scheme -> {
                 deleted = DocumentFile
                     .fromSingleUri(context, this)
                     ?.delete() ?: false
@@ -428,9 +461,9 @@ fun Uri.openInputStream(context: Context): InputStream? {
     var inputStream: InputStream? = null
     try {
         when (scheme) {
-            ContentResolver.SCHEME_CONTENT,
-            ContentResolver.SCHEME_FILE,
-            ContentResolver.SCHEME_ANDROID_RESOURCE -> {
+            SCHEME_CONTENT,
+            SCHEME_FILE,
+            SCHEME_ANDROID_RESOURCE -> {
                 inputStream = context.contentResolver.openInputStream(this)
             }
 
@@ -471,30 +504,178 @@ fun Uri.openInputStream(context: Context): InputStream? {
  * @param dstUri The destination Uri to write the content to.
  * @return The total number of bytes written, or -1 if an error occurred.
  */
-@SuppressLint("Recycle")
-fun Uri.copyTo(context: Context, dstUri: Uri): Int {
-    var inputStream: InputStream? = null
-    var outputStream: OutputStream? = null
-    var bytesWritten = -1
+fun Uri.copyTo(context: Context, dstUri: Uri): Long {
+    var input: InputStream? = null
+    var output: OutputStream? = null
+    var written = -1L
     try {
-        outputStream = context.contentResolver.openOutputStream(dstUri)
-        inputStream = openInputStream(context)
-
-        if (inputStream != null && outputStream != null) {
-            bytesWritten = inputStream.readBytes { buffer, bytesRead ->
-                outputStream.write(buffer, 0, bytesRead)
-                true
-            }
-            outputStream.flush()
+        output = context.contentResolver.openOutputStream(dstUri)
+        input = openInputStream(context)
+        if (input != null && output != null) {
+            written = input.copyTo(output)
         }
-
     } catch (_: Exception) {
-
     } finally {
-        inputStream?.closeQuietly()
-        outputStream?.closeQuietly()
+        input?.closeQuietly()
+        output?.closeQuietly()
     }
-    return bytesWritten
+    return written
+}
+
+/**
+ * Recursively copies the contents of the source directory or file specified by this [Uri] to the target
+ * directory or file specified by the [targetUri]. If the source [Uri] represents a directory, all its
+ * contents, including subdirectories and files, will be copied to the target directory. If the source [Uri]
+ * represents a file, only that file will be copied to the target [Uri].
+ *
+ * @param context The [Context] used to access content resolver.
+ * @param targetUri The target [Uri] representing the destination directory or file where the contents
+ *                  will be copied to.
+ * @param overwrite If set to true and a file with the same name already exists at the target location,
+ *                  it will be overwritten. If set to false, the function will not overwrite existing files
+ *                  and will throw exception.
+ */
+fun Uri.copyRecursively(context: Context, targetUri: Uri, overwrite: Boolean = false): Boolean {
+    try {
+        val srcScheme = scheme
+        val targetScheme = targetUri.scheme
+        when (srcScheme) {
+            SCHEME_FILE -> {
+                val srcFile = toFile()
+                when {
+                    SCHEME_FILE == targetScheme -> {
+                        val dstFile = targetUri.toFile()
+                        srcFile.copyRecursively(dstFile, overwrite)
+                    }
+
+                    targetUri.isTreeUri -> {
+                        val targetFile = DocumentFile.fromTreeUri(context, targetUri)
+                        if (targetFile != null && targetFile.exists()) {
+                            if (srcFile.isDirectory && targetFile.isDirectory || srcFile.isFile && targetFile.isFile) {
+                                copyRecursively(context, srcFile, targetFile, overwrite)
+                            } else {
+                                throw RuntimeException("Incompatible source and target files.")
+                            }
+                        } else {
+                            throw FileNotFoundException("Target file does not exists.")
+                        }
+                    }
+
+                    else -> {
+                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
+                    }
+                }
+            }
+
+            SCHEME_ANDROID_RESOURCE,
+            SCHEME_CONTENT,
+            "http",
+            "https" -> {
+                val srcStream = openInputStream(context)
+                    ?: throw IOException("Could not open android resource input stream.")
+                val dstStream = when {
+                    SCHEME_FILE == targetScheme -> {
+                        val targetFile = targetUri.toFile()
+                        if (targetFile.exists() && targetFile.isFile) {
+                            if (!overwrite || !targetFile.delete()) {
+                                throw RuntimeException("File already exists.")
+                            }
+                        }
+                        FileOutputStream(targetFile)
+                    }
+
+                    SCHEME_CONTENT == targetScheme -> {
+                        context.contentResolver.openOutputStream(targetUri)
+                            ?: throw IOException("Could not open target output stream")
+                    }
+
+                    else -> {
+                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
+                    }
+                }
+                dstStream.use { output ->
+                    srcStream.use { input -> input.copyTo(output) }
+                }
+            }
+
+            "tree" -> {
+                val srcFile = DocumentFile.fromTreeUri(context, this)
+                when (targetScheme) {
+                    SCHEME_FILE -> {
+
+                    }
+
+                    "tree" -> {
+
+                    }
+
+                    else -> {
+                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
+                    }
+                }
+            }
+        }
+    } catch (_: Exception) {
+        return false
+    }
+    return true
+}
+
+private fun copyRecursively(
+    context: Context,
+    srcFile: File,
+    targetFile: DocumentFile,
+    overwrite: Boolean
+) {
+    if (srcFile.isDirectory) {
+        val files = srcFile.listFiles() ?: emptyArray()
+        for (file in files) {
+            if (file.isDirectory) {
+                val foundFile = targetFile.findFile(file.name)
+                val dstDir = if (foundFile != null && foundFile.isDirectory) {
+                    foundFile
+                } else {
+                    targetFile.createDirectory(file.name)
+                        ?: throw IOException("Could not create directory.")
+                }
+                copyRecursively(context, file, dstDir, overwrite)
+            } else {
+                val foundFile = targetFile.findFile(file.name)
+                val fileExists = if (foundFile != null && foundFile.isFile) {
+                    if (overwrite) {
+                        !foundFile.delete()
+                    } else {
+                        true
+                    }
+                } else {
+                    false
+                }
+                if (fileExists) {
+                    throw IOException("File already exists.")
+                }
+                val extension = MimeTypeMap.getFileExtensionFromUrl(file.name)
+                val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+                    ?: throw RuntimeException("Could not retrieve file mime type.")
+                val dstFile = targetFile.createFile(mimeType, file.name)
+                    ?: throw IOException("Could not create file.")
+                copyRecursively(context, file, dstFile, overwrite)
+            }
+        }
+    } else {
+        val inputStream = FileInputStream(srcFile)
+        val outputStream = context.contentResolver.openOutputStream(targetFile.uri)
+            ?: throw IOException("Could not open output stream.")
+        val bytesCopied = inputStream.use { input ->
+            outputStream.use { output -> input.copyTo(output) }
+        }
+        if (bytesCopied != srcFile.length()) {
+            throw IOException("Source file wasn't copied completely.")
+        }
+    }
+}
+
+private fun copyRecursively(srcFile: DocumentFile, targetFile: File) {
+
 }
 
 /**

@@ -1,10 +1,9 @@
 package com.aureusapps.android.extensions
 
-import android.annotation.SuppressLint
+import android.content.ContentResolver.SCHEME_FILE
 import android.content.Context
-import androidx.core.net.toFile
+import android.webkit.MimeTypeMap
 import androidx.documentfile.provider.DocumentFile
-import okhttp3.internal.closeQuietly
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -49,195 +48,124 @@ fun DocumentFile.walkTopDown(action: (DocumentFile) -> Boolean): Boolean {
 }
 
 /**
- * Recursively deletes the contents of this `DocumentFile`, including all its child files and
- * directories, if any. This function will attempt to delete all the contents of the `DocumentFile`
- * and the `DocumentFile` itself.
+ * Opens an input stream to read from the DocumentFile using the provided context.
  *
- * @return `true` if the deletion was successful, `false` otherwise.
+ * @param context The context used to access the content resolver.
+ * @return An InputStream to read from the DocumentFile, or null if an error occurs.
  */
-fun DocumentFile.deleteRecursively(): Boolean {
-    return walkBottomUp { file ->
-        file.delete()
-    }
+fun DocumentFile.openInputStream(context: Context): InputStream? {
+    return context.contentResolver.openInputStream(uri)
 }
 
 /**
- * Recursively copies the contents of this `DocumentFile` to the specified target `DocumentFile`.
+ * Opens an output stream to write to the DocumentFile using the provided context.
  *
- * @param context The `Context` object used for accessing content resolver and other resources.
- * @param targetFile The target `DocumentFile` to which the contents will be copied.
- * @param overwrite Determines whether to overwrite existing files at the target location.
- *                  If set to `true`, existing files will be overwritten; if set to `false`,
- *                  the function will fail if a file with the same name already exists.
- *                  Defaults to `false`.
- * @param onError Called when error occurred. Return true to terminate and false to skip.
- *
- * @return `true` if the copy operation was successful, `false` otherwise.
+ * @param context The context used to access the content resolver.
+ * @return An OutputStream to write to the DocumentFile, or null if an error occurs.
  */
-fun DocumentFile.copyRecursively(
-    context: Context,
-    targetFile: DocumentFile,
-    overwrite: Boolean = false,
-    onError: (message: String) -> Boolean = { true }
-): Boolean {
-    if (!exists()) {
-        onError("Source file does not exists.")
-        return false
-    }
-    val srcIsDirectory = isDirectory
-    val targetIsDirectory = targetFile.isDirectory
-    val dstFile =
-        if (srcIsDirectory && targetIsDirectory || targetFile.isFile && targetFile.length() == 0L) {
-            targetFile
-        } else {
-            if (targetFile.uri.scheme == "file") {
-                val file = targetFile.uri.toFile()
-                if (file.exists()) {
-                    if (file.isDirectory) {
-                        file.deleteRecursively()
-                    } else {
-                        file.delete()
-                    }
-                }
-                if (srcIsDirectory) {
-                    file.mkdirs()
-                } else {
-                    file.createNewFile()
-                }
-                DocumentFile.fromFile(file)
-            } else {
-                val targetParent = targetFile.parentFile ?: run {
-                    onError("Failed to retrieve target parent.")
-                    return false
-                }
-                val targetName = targetFile.name ?: run {
-                    onError("Failed to retrieve target name.")
-                    return false
-                }
-                if (targetFile.exists()) {
-                    val stillExists = if (!overwrite) true else if (targetIsDirectory) {
-                        !targetFile.deleteRecursively()
-                    } else {
-                        !targetFile.delete()
-                    }
-                    if (stillExists) {
-                        onError("Failed to delete existing file.")
-                        return false
-                    }
-                }
-                if (srcIsDirectory) {
-                    targetParent.createDirectory(targetName) ?: run {
-                        onError("Could not create destination directory.")
-                        return false
-                    }
-                } else {
-                    val mimeType = targetFile.type ?: run {
-                        onError("Could not retrieve target mime type.")
-                        return false
-                    }
-                    targetParent.createFile(mimeType, targetName) ?: run {
-                        onError("Could not create destination file.")
-                        return false
-                    }
-                }
-            }
-        }
-    return copyRecursively(context, this, dstFile, overwrite, onError)
+fun DocumentFile.openOutputStream(context: Context): OutputStream? {
+    return context.contentResolver.openOutputStream(uri)
 }
 
-@SuppressLint("Recycle")
-private fun copyRecursively(
+/**
+ * Copies the current DocumentFile to a target parent DocumentFile.
+ *
+ * @param context The android context.
+ * @param targetParent The parent DocumentFile to which the current DocumentFile should be copied.
+ * @param overwrite Determines whether to overwrite the target file if it already exists. Default is false.
+ * @param onError A lambda function that handles errors during the copy operation.
+ *                It takes an error message as input and returns a boolean indicating whether
+ *                the operation should be terminated (true) or continued (false). Default is to terminate.
+ * @return true if the copy operation is successful, false otherwise.
+ */
+fun DocumentFile.copyTo(
     context: Context,
-    srcFile: DocumentFile,
-    targetFile: DocumentFile,
+    targetParent: DocumentFile,
     overwrite: Boolean = false,
-    onError: (message: String) -> Boolean = { true }
+    onError: (String) -> Boolean = { true }
 ): Boolean {
-    if (srcFile.isDirectory) {
-        val files = srcFile.listFiles()
-        for (src in files) {
-            val srcIsDirectory = src.isDirectory
-            val srcName = src.name
-                ?: if (onError("Source file name is null.")) {
+    if (!this.exists()) {
+        onError("The source file doesn't exist.")
+        return false
+    }
+    val srcName = name ?: run {
+        onError("Couldn't retrieve document name.")
+        return false
+    }
+    if (isDirectory) {
+        val existing = targetParent.findFile(srcName)
+        val dst = if (existing != null && existing.isDirectory) {
+            existing
+        } else {
+            if (existing != null) {
+                if (overwrite) {
+                    if (!existing.delete()) {
+                        onError("Tried to overwrite the destination, but failed to delete it.")
+                        return false
+                    }
+                } else {
+                    onError("The destination file already exists.")
                     return false
-                } else {
-                    continue
-                }
-            val existing = targetFile.findFile(srcName)
-            val create = if (existing == null) {
-                true
-            } else {
-                val existingIsDirectory = existing.isDirectory
-                if (srcIsDirectory && existingIsDirectory) {
-                    false
-                } else {
-                    val stillExists = if (overwrite) {
-                        if (existingIsDirectory) {
-                            !existing.deleteRecursively()
-                        } else {
-                            !existing.delete()
-                        }
-                    } else {
-                        true
-                    }
-                    if (stillExists) {
-                        if (onError("Could not delete existing file.")) {
-                            return false
-                        } else {
-                            continue
-                        }
-                    }
-                    true
                 }
             }
-            val dst = if (create) {
-                if (srcIsDirectory) {
-                    targetFile.createDirectory(srcName)
-                        ?: if (onError("Could not create destination directory.")) {
-                            return false
-                        } else {
-                            continue
-                        }
-                } else {
-                    val mimeType = src.type
-                        ?: if (onError("Could not retrieve source file mime type.")) {
-                            return false
-                        } else {
-                            continue
-                        }
-                    val fileName = srcName.substringBeforeLast(".")
-                    targetFile.createFile(mimeType, fileName)
-                        ?: if (onError("Could not create destination file.")) {
-                            return false
-                        } else {
-                            continue
-                        }
-                }
-            } else {
-                existing!!
-            }
-            if (!copyRecursively(context, src, dst, overwrite, onError)) {
+            targetParent.createDirectory(srcName) ?: run {
+                onError("Failed to create directory.")
                 return false
             }
         }
-        return true
+        val files = listFiles()
+        var result = true
+        for (src in files) {
+            var terminate = false
+            val copied = src.copyTo(context, dst, overwrite) {
+                terminate = onError(it)
+                terminate
+            }
+            if (!copied) {
+                if (result) {
+                    result = false
+                }
+                if (terminate) {
+                    return false
+                }
+            }
+        }
+        return result
     } else {
+        val existing = targetParent.findFile(srcName)
+        if (existing != null) {
+            if (overwrite) {
+                if (!existing.delete()) {
+                    onError("Tried to overwrite the destination, but failed to delete it.")
+                    return false
+                }
+            } else {
+                onError("The destination file already exists.")
+                return false
+            }
+        }
+        val mimeType = if (uri.scheme != SCHEME_FILE) {
+            val extension = srcName.substringAfterLast(".")
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
+        } else {
+            ""
+        }
+        val dst = targetParent.createFile(mimeType, srcName) ?: run {
+            onError("Failed to create file.")
+            return false
+        }
         var input: InputStream? = null
         var output: OutputStream? = null
-        return try {
-            input = context.contentResolver.openInputStream(srcFile.uri)
-            output = context.contentResolver.openOutputStream(targetFile.uri)
+        try {
+            input = openInputStream(context)
+            output = dst.openOutputStream(context)
             if (input != null && output != null) {
-                input.copyTo(output)
-                true
-            } else {
-                false
+                return input.copyTo(output) == length()
             }
-        } catch (_: Exception) {
-            false
         } finally {
-            input?.closeQuietly()
-            output?.closeQuietly()
+            input?.close()
+            output?.close()
         }
+        return false
     }
 }
