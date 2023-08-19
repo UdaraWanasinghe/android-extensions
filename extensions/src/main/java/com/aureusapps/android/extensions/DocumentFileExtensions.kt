@@ -88,51 +88,15 @@ fun DocumentFile.copyTo(
         onError("The source file doesn't exist.")
         return false
     }
-    val srcName = name ?: run {
+    val srcIsDirectory = this.isDirectory
+    val srcName = this.name ?: run {
         onError("Couldn't retrieve document name.")
         return false
     }
-    if (isDirectory) {
-        val existing = targetParent.findFile(srcName)
-        val dst = if (existing != null && existing.isDirectory) {
-            existing
-        } else {
-            if (existing != null) {
-                if (overwrite) {
-                    if (!existing.delete()) {
-                        onError("Tried to overwrite the destination, but failed to delete it.")
-                        return false
-                    }
-                } else {
-                    onError("The destination file already exists.")
-                    return false
-                }
-            }
-            targetParent.createDirectory(srcName) ?: run {
-                onError("Failed to create directory.")
-                return false
-            }
-        }
-        val files = listFiles()
-        var result = true
-        for (src in files) {
-            var terminate = false
-            val copied = src.copyTo(context, dst, overwrite) {
-                terminate = onError(it)
-                terminate
-            }
-            if (!copied) {
-                if (result) {
-                    result = false
-                }
-                if (terminate) {
-                    return false
-                }
-            }
-        }
-        return result
+    val existing = targetParent.findFile(srcName)
+    val dst = if (existing != null && existing.isDirectory) {
+        existing
     } else {
-        val existing = targetParent.findFile(srcName)
         if (existing != null) {
             if (overwrite) {
                 if (!existing.delete()) {
@@ -144,16 +108,39 @@ fun DocumentFile.copyTo(
                 return false
             }
         }
-        val mimeType = if (uri.scheme != SCHEME_FILE) {
-            val extension = srcName.substringAfterLast(".")
-            MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
+        if (srcIsDirectory) {
+            targetParent.createDirectory(srcName) ?: run {
+                onError("Failed to create directory.")
+                return false
+            }
         } else {
-            ""
+            val mimeType = if (uri.scheme != SCHEME_FILE) {
+                val extension = srcName.substringAfterLast(".")
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
+            } else {
+                ""
+            }
+            targetParent.createFile(mimeType, srcName) ?: run {
+                onError("Failed to create file.")
+                return false
+            }
         }
-        val dst = targetParent.createFile(mimeType, srcName) ?: run {
-            onError("Failed to create file.")
-            return false
+    }
+    if (srcIsDirectory) {
+        val files = listFiles()
+        var result = true
+        for (src in files) {
+            var terminate = false
+            val copied = src.copyTo(context, dst, overwrite) { message ->
+                onError(message).also { terminate = it }
+            }
+            if (!copied) {
+                if (result) result = false
+                if (terminate) return false
+            }
         }
+        return result
+    } else {
         var input: InputStream? = null
         var output: OutputStream? = null
         try {
