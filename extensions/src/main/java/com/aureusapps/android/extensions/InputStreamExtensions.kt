@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -87,4 +88,27 @@ fun InputStream.readBytes(
         totalBytes += bytesRead
     }
     return totalBytes
+}
+
+/**
+ * Reads the content of this input stream into a byte array.
+ *
+ * @param bufferSize The size of the buffer used for reading. Default is 8192 bytes.
+ * @return A byte array containing the content of the input stream.
+ */
+fun InputStream.readBytes(bufferSize: Int = 8192): ByteArray {
+    val reader = BufferedInputStream(this).bufferedReader()
+    val output = ByteArrayOutputStream()
+    val writer = output.bufferedWriter()
+    reader.copyTo(writer, bufferSize)
+    return output.toByteArray()
+}
+
+/**
+ * Reads the content of this input stream and converts it to a string.
+ *
+ * @return The content of the input stream as a string.
+ */
+fun InputStream.readText(bufferSize: Int = 8192): String {
+    return String(readBytes(bufferSize))
 }
