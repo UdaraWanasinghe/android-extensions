@@ -8,6 +8,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
+import android.provider.DocumentsProvider
 import android.text.TextUtils
 import android.webkit.MimeTypeMap
 import androidx.core.net.toFile
@@ -17,10 +18,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.internal.closeQuietly
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileNotFoundException
-import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.HttpURLConnection
@@ -42,6 +39,9 @@ val Uri.isTreeUri: Boolean
         }
     }
 
+/**
+ * Test if the given URI represents specific root backed by [DocumentsProvider].
+ */
 fun Uri.isRootUri(context: Context): Boolean {
     // content://com.example/root/
     // content://com.example/root/sdcard/
@@ -54,10 +54,91 @@ fun Uri.isRootUri(context: Context): Boolean {
     }
 }
 
+/**
+ * Test if the given URI represents a [DocumentsContract.Document] backed by a DocumentsProvider.
+ */
 fun Uri.isDocumentUri(context: Context): Boolean {
     // content://com.example/document/12/
     // content://com.example/tree/12/document/24/
     return DocumentsContract.isDocumentUri(context, this)
+}
+
+/**
+ * Queries the content represented by the Uri for an integer value from the specified column.
+ *
+ * @param context The context used to access the content resolver.
+ * @param column The name of the column from which to retrieve the integer value.
+ * @param defaultValue The default value to return if the query does not yield a valid result.
+ * @return The integer value from the specified column, or the defaultValue if not found or invalid.
+ */
+fun Uri.queryForInt(
+    context: Context,
+    column: String,
+    defaultValue: Int
+): Int {
+    val projection = arrayOf(column)
+    val resolver = context.contentResolver
+    resolver.query(this, projection, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val columnIndex = cursor.getColumnIndex(column)
+            if (columnIndex != -1) {
+                return cursor.getInt(columnIndex)
+            }
+        }
+    }
+    return defaultValue
+}
+
+/**
+ * Queries the content represented by the Uri for a long value from the specified column.
+ *
+ * @param context The context used to access the content resolver.
+ * @param column The name of the column from which to retrieve the long value.
+ * @param defaultValue The default value to return if the query does not yield a valid result.
+ * @return The long value from the specified column, or the defaultValue if not found or invalid.
+ */
+fun Uri.queryForLong(
+    context: Context,
+    column: String,
+    defaultValue: Long
+): Long {
+    val projection = arrayOf(column)
+    val resolver = context.contentResolver
+    resolver.query(this, projection, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val columnIndex = cursor.getColumnIndex(column)
+            if (columnIndex != -1) {
+                return cursor.getLong(columnIndex)
+            }
+        }
+    }
+    return defaultValue
+}
+
+/**
+ * Queries the content represented by the Uri for a string value from the specified column.
+ *
+ * @param context The context used to access the content resolver.
+ * @param column The name of the column from which to retrieve the string value.
+ * @param defaultValue The default value to return if the query does not yield a valid result.
+ * @return The string value from the specified column, or the defaultValue if not found or invalid.
+ */
+fun Uri.queryForString(
+    context: Context,
+    column: String,
+    defaultValue: String
+): String {
+    val projection = arrayOf(column)
+    val resolver = context.contentResolver
+    resolver.query(this, projection, null, null, null)?.use { cursor ->
+        if (cursor.moveToFirst()) {
+            val columnIndex = cursor.getColumnIndex(column)
+            if (columnIndex != -1) {
+                return cursor.getString(columnIndex)
+            }
+        }
+    }
+    return defaultValue
 }
 
 /**
@@ -336,7 +417,7 @@ fun Uri.exists(context: Context): Boolean {
             }
 
             else -> {
-                throw Exception("Unknown Uri scheme")
+                throw Exception("Unknown Uri scheme.")
             }
         }
 
@@ -450,6 +531,34 @@ fun Uri.fileExists(context: Context, fileName: String): Boolean {
 }
 
 /**
+ * Returns the size of the content represented by the Uri in bytes.
+ *
+ * @return The size of the content in bytes, or -1 if the size cannot be determined.
+ */
+fun Uri.fileSize(context: Context): Long {
+    return when (scheme) {
+        SCHEME_FILE -> DocumentFile.fromFile(toFile()).length()
+        SCHEME_CONTENT -> queryForLong(context, DocumentsContract.Document.COLUMN_SIZE, 0)
+        SCHEME_ANDROID_RESOURCE -> context
+            .contentResolver
+            .openAssetFileDescriptor(this, "r")
+            ?.use { it.length }
+            ?: 0
+
+        "http",
+        "https" -> {
+            val con = URL(toString()).openConnection() as HttpURLConnection
+            con.connect()
+            val len = con.contentLength.toLong()
+            con.disconnect()
+            len
+        }
+
+        else -> -1
+    }
+}
+
+/**
  * Opens an input stream for reading the content represented by the Uri.
  *
  * @param context The context used for accessing content resolver.
@@ -498,184 +607,97 @@ fun Uri.openInputStream(context: Context): InputStream? {
 }
 
 /**
- * Copies the content from the source Uri to the destination Uri.
+ * Copies the content represented by the source Uri to a target parent Uri using the provided context.
  *
- * @param context The context used to open InputStream and OutputStream from the Uris.
- * @param dstUri The destination Uri to write the content to.
- * @return The total number of bytes written, or -1 if an error occurred.
+ * @param context The context used to access the content resolver.
+ * @param targetParent The parent Uri to which the content should be copied.
+ * @param overwrite Determines whether to overwrite the target content if it already exists. Default is false.
+ * @param onError A lambda function that handles errors during the copy operation.
+ *                It takes an error message as input and returns a boolean indicating whether
+ *                the operation should be terminated (true) or continued (false). Default is to terminate.
+ * @return true if the copy operation is successful, false otherwise.
  */
-fun Uri.copyTo(context: Context, dstUri: Uri): Long {
-    var input: InputStream? = null
-    var output: OutputStream? = null
-    var written = -1L
-    try {
-        output = context.contentResolver.openOutputStream(dstUri)
-        input = openInputStream(context)
-        if (input != null && output != null) {
-            written = input.copyTo(output)
-        }
-    } catch (_: Exception) {
-    } finally {
-        input?.closeQuietly()
-        output?.closeQuietly()
-    }
-    return written
-}
-
-/**
- * Recursively copies the contents of the source directory or file specified by this [Uri] to the target
- * directory or file specified by the [targetUri]. If the source [Uri] represents a directory, all its
- * contents, including subdirectories and files, will be copied to the target directory. If the source [Uri]
- * represents a file, only that file will be copied to the target [Uri].
- *
- * @param context The [Context] used to access content resolver.
- * @param targetUri The target [Uri] representing the destination directory or file where the contents
- *                  will be copied to.
- * @param overwrite If set to true and a file with the same name already exists at the target location,
- *                  it will be overwritten. If set to false, the function will not overwrite existing files
- *                  and will throw exception.
- */
-fun Uri.copyRecursively(context: Context, targetUri: Uri, overwrite: Boolean = false): Boolean {
-    try {
-        val srcScheme = scheme
-        val targetScheme = targetUri.scheme
-        when (srcScheme) {
-            SCHEME_FILE -> {
-                val srcFile = toFile()
-                when {
-                    SCHEME_FILE == targetScheme -> {
-                        val dstFile = targetUri.toFile()
-                        srcFile.copyRecursively(dstFile, overwrite)
-                    }
-
-                    targetUri.isTreeUri -> {
-                        val targetFile = DocumentFile.fromTreeUri(context, targetUri)
-                        if (targetFile != null && targetFile.exists()) {
-                            if (srcFile.isDirectory && targetFile.isDirectory || srcFile.isFile && targetFile.isFile) {
-                                copyRecursively(context, srcFile, targetFile, overwrite)
-                            } else {
-                                throw RuntimeException("Incompatible source and target files.")
-                            }
-                        } else {
-                            throw FileNotFoundException("Target file does not exists.")
-                        }
-                    }
-
-                    else -> {
-                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
-                    }
-                }
-            }
-
-            SCHEME_ANDROID_RESOURCE,
-            SCHEME_CONTENT,
-            "http",
-            "https" -> {
-                val srcStream = openInputStream(context)
-                    ?: throw IOException("Could not open android resource input stream.")
-                val dstStream = when {
-                    SCHEME_FILE == targetScheme -> {
-                        val targetFile = targetUri.toFile()
-                        if (targetFile.exists() && targetFile.isFile) {
-                            if (!overwrite || !targetFile.delete()) {
-                                throw RuntimeException("File already exists.")
-                            }
-                        }
-                        FileOutputStream(targetFile)
-                    }
-
-                    SCHEME_CONTENT == targetScheme -> {
-                        context.contentResolver.openOutputStream(targetUri)
-                            ?: throw IOException("Could not open target output stream")
-                    }
-
-                    else -> {
-                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
-                    }
-                }
-                dstStream.use { output ->
-                    srcStream.use { input -> input.copyTo(output) }
-                }
-            }
-
-            "tree" -> {
-                val srcFile = DocumentFile.fromTreeUri(context, this)
-                when (targetScheme) {
-                    SCHEME_FILE -> {
-
-                    }
-
-                    "tree" -> {
-
-                    }
-
-                    else -> {
-                        throw UnsupportedOperationException("Destination directory uri scheme ($targetScheme) is not supported")
-                    }
-                }
-            }
-        }
-    } catch (_: Exception) {
-        return false
-    }
-    return true
-}
-
-private fun copyRecursively(
+fun Uri.copyTo(
     context: Context,
-    srcFile: File,
-    targetFile: DocumentFile,
-    overwrite: Boolean
-) {
-    if (srcFile.isDirectory) {
-        val files = srcFile.listFiles() ?: emptyArray()
-        for (file in files) {
-            if (file.isDirectory) {
-                val foundFile = targetFile.findFile(file.name)
-                val dstDir = if (foundFile != null && foundFile.isDirectory) {
-                    foundFile
-                } else {
-                    targetFile.createDirectory(file.name)
-                        ?: throw IOException("Could not create directory.")
+    targetParent: Uri,
+    overwrite: Boolean = false,
+    onError: (String) -> Boolean = { true }
+): Boolean {
+    val srcScheme = this.scheme
+    val dstScheme = targetParent.scheme
+    when (srcScheme) {
+        SCHEME_FILE -> {
+            val srcDocument = DocumentFile.fromFile(this.toFile())
+            val parentDocument = when {
+                dstScheme == SCHEME_FILE -> {
+                    DocumentFile.fromFile(targetParent.toFile())
                 }
-                copyRecursively(context, file, dstDir, overwrite)
-            } else {
-                val foundFile = targetFile.findFile(file.name)
-                val fileExists = if (foundFile != null && foundFile.isFile) {
-                    if (overwrite) {
-                        !foundFile.delete()
-                    } else {
-                        true
+
+                targetParent.isTreeUri -> {
+                    DocumentFile.fromTreeUri(context, targetParent) ?: run {
+                        onError("Tree uris are not supported on this android version.")
+                        return false
                     }
-                } else {
-                    false
                 }
-                if (fileExists) {
-                    throw IOException("File already exists.")
+
+                else -> {
+                    onError("Unsupported destination uri.")
+                    return false
                 }
-                val extension = MimeTypeMap.getFileExtensionFromUrl(file.name)
-                val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
-                    ?: throw RuntimeException("Could not retrieve file mime type.")
-                val dstFile = targetFile.createFile(mimeType, file.name)
-                    ?: throw IOException("Could not create file.")
-                copyRecursively(context, file, dstFile, overwrite)
+            }
+            return srcDocument.copyTo(context, parentDocument, overwrite, onError)
+        }
+
+        else -> {
+            val input = openInputStream(context) ?: run {
+                onError("Given source uri is not supported.")
+                return false
+            }
+            val parentDocument = when {
+                targetParent.isFileUri -> {
+                    val file = targetParent.toFile()
+                    DocumentFile.fromFile(file)
+                }
+
+                targetParent.isTreeUri -> {
+                    DocumentFile.fromTreeUri(context, targetParent) ?: run {
+                        onError("Current android version is not supported.")
+                        return false
+                    }
+                }
+
+                else -> {
+                    onError("Given target parent uri is not supported.")
+                    return false
+                }
+            }
+            val srcName = this.fileName(context) ?: run {
+                onError("Failed to retrieve source file name.")
+                return false
+            }
+            val extension = srcName.substringAfterLast(".")
+            val mimeType = if (targetParent.scheme != SCHEME_FILE) {
+                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
+            } else {
+                ""
+            }
+            val dstDocument = parentDocument.createFile(mimeType, srcName) ?: run {
+                onError("Failed to create destination file.")
+                return false
+            }
+            val output = dstDocument.openOutputStream(context) ?: run {
+                onError("Failed to open destination output stream.")
+                return false
+            }
+            try {
+                val fileSize = this.fileSize(context)
+                return input.copyTo(output) == fileSize
+            } finally {
+                input.close()
+                output.close()
             }
         }
-    } else {
-        val inputStream = FileInputStream(srcFile)
-        val outputStream = context.contentResolver.openOutputStream(targetFile.uri)
-            ?: throw IOException("Could not open output stream.")
-        val bytesCopied = inputStream.use { input ->
-            outputStream.use { output -> input.copyTo(output) }
-        }
-        if (bytesCopied != srcFile.length()) {
-            throw IOException("Source file wasn't copied completely.")
-        }
     }
-}
-
-private fun copyRecursively(srcFile: DocumentFile, targetFile: File) {
-
 }
 
 /**
@@ -713,7 +735,7 @@ fun Uri.writeBytes(context: Context, bytes: ByteArray): Boolean {
     var outputStream: OutputStream? = null
     try {
         outputStream = context.contentResolver.openOutputStream(this)
-            ?: throw NullPointerException("Could not open the output stream")
+            ?: throw NullPointerException("Could not open the output stream.")
         outputStream.write(bytes)
         outputStream.flush()
         result = true

@@ -80,10 +80,13 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 
+    androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
     androidTestImplementation(libs.junit.ext)
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.room.runtime)
     kaptAndroidTest(libs.room.compiler)
     androidTestImplementation(libs.okhttp)
     androidTestImplementation(libs.okhttp.mockwebserver)
+    androidTestImplementation(libs.test.core.ktx)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 }

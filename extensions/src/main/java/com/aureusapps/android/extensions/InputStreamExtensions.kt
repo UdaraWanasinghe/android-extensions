@@ -97,10 +97,8 @@ fun InputStream.readBytes(
  * @return A byte array containing the content of the input stream.
  */
 fun InputStream.readBytes(bufferSize: Int = 8192): ByteArray {
-    val reader = BufferedInputStream(this).bufferedReader()
     val output = ByteArrayOutputStream()
-    val writer = output.bufferedWriter()
-    reader.copyTo(writer, bufferSize)
+    copyTo(output, bufferSize)
     return output.toByteArray()
 }
 
