@@ -280,12 +280,11 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_copyUri() {
-        // file uri
+    fun copyUri_fileUri() {
         val srcFile = createExternalStorageFile()
-        var srcUri = Uri.fromFile(srcFile)
-        var targetParentFile = createExternalStorageDirectory()
-        var targetParentUri = targetParentFile.toUri()
+        val srcUri = Uri.fromFile(srcFile)
+        val targetParentFile = createExternalStorageDirectory()
+        val targetParentUri = targetParentFile.toUri()
         try {
             val copied = srcUri.copyTo(context, targetParentUri)
             assertTrue(copied)
@@ -295,12 +294,14 @@ class UriExtensionsInstrumentedTest {
             srcFile.delete()
             targetParentFile.deleteRecursively()
         }
+    }
 
-        // content provider uri
+    @Test
+    fun copyUri_contentProviderUri() {
         val srcName = genRandomName(extension = "txt")
-        srcUri = createContentProviderFile(fileName = srcName)
-        targetParentFile = createExternalStorageDirectory()
-        targetParentUri = targetParentFile.toUri()
+        val srcUri = createContentProviderFile(fileName = srcName)
+        val targetParentFile = createExternalStorageDirectory()
+        val targetParentUri = targetParentFile.toUri()
         try {
             val copied = srcUri.copyTo(context, targetParentUri)
             assertTrue(copied)
@@ -310,11 +311,13 @@ class UriExtensionsInstrumentedTest {
             deleteContentProviderFile(srcUri)
             targetParentFile.deleteRecursively()
         }
+    }
 
-        // android resource uri
-        srcUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
-        targetParentFile = createExternalStorageDirectory()
-        targetParentUri = targetParentFile.toUri()
+    @Test
+    fun copyUri_androidResourceUri() {
+        val srcUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
+        val targetParentFile = createExternalStorageDirectory()
+        val targetParentUri = targetParentFile.toUri()
         try {
             val copied = srcUri.copyTo(context, targetParentUri)
             assertTrue(copied)
@@ -323,15 +326,17 @@ class UriExtensionsInstrumentedTest {
         } finally {
             targetParentFile.deleteRecursively()
         }
+    }
 
-        // http uri
+    @Test
+    fun copyUri_httpUri() {
         val server = hostFileContent()
+        val fileName = "hosted_text.txt"
+        val contentUrl = server.url(fileName).toString()
+        val srcUri = Uri.parse(contentUrl)
+        val targetParentFile = createExternalStorageDirectory()
+        val targetParentUri = targetParentFile.toUri()
         try {
-            val fileName = "hosted_text.txt"
-            val contentUrl = server.url(fileName).toString()
-            srcUri = Uri.parse(contentUrl)
-            targetParentFile = createExternalStorageDirectory()
-            targetParentUri = targetParentFile.toUri()
             val copied = srcUri.copyTo(context, targetParentUri)
             assertTrue(copied)
             val dstFile = File(targetParentFile, fileName)
@@ -374,20 +379,6 @@ class UriExtensionsInstrumentedTest {
         } finally {
             rootDir.deleteRecursively()
         }
-    }
-
-    private fun hostFileContent(text: String = "Sample text"): MockWebServer {
-        val server = MockWebServer()
-        server.dispatcher = object : Dispatcher() {
-            override fun dispatch(request: RecordedRequest): MockResponse {
-                return MockResponse()
-                    .setResponseCode(200)
-                    .addHeader("Content-Type", "text/plain; charset=utf-8")
-                    .setBody(text)
-            }
-        }
-        server.start()
-        return server
     }
 
     @Test
@@ -505,6 +496,20 @@ class UriExtensionsInstrumentedTest {
     private fun deleteContentProviderFile(documentUri: Uri) {
         val deleted = DocumentsContract.deleteDocument(context.contentResolver, documentUri)
         assertTrue(deleted)
+    }
+
+    private fun hostFileContent(text: String = "Sample text"): MockWebServer {
+        val server = MockWebServer()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                return MockResponse()
+                    .setResponseCode(200)
+                    .addHeader("Content-Type", "text/plain; charset=utf-8")
+                    .setBody(text)
+            }
+        }
+        server.start()
+        return server
     }
 
     companion object {
