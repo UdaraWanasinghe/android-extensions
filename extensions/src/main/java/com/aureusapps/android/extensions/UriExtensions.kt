@@ -304,8 +304,8 @@ fun Uri.createFile(
 ): Uri? {
     var fileUri: Uri? = null
     try {
-        when {
-            isFileUri -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 val parentFile = toFile()
                 if (parentFile.exists()) {
                     val childFile = File(parentFile, fileName)
@@ -339,7 +339,7 @@ fun Uri.createFile(
                 }
             }
 
-            isTreeUri -> {
+            SCHEME_CONTENT -> {
                 val parentDoc = DocumentFile.fromTreeUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(fileName)
