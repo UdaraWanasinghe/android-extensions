@@ -11,6 +11,7 @@ import org.junit.runners.Suite
     AttributeSetExtensionsInstrumentedTest::class,
     UriExtensionsInstrumentedTest::class,
     DocumentFileExtensionsInstrumentedTest::class,
-    CryptoUtilsInstrumentedTest::class
+    CryptoUtilsInstrumentedTest::class,
+    MatrixExtensionsInstrumentedTest::class
 )
 class ExtensionsInstrumentedTests
