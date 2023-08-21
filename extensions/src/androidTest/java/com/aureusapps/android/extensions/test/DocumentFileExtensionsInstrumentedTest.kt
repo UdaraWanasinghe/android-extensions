@@ -1,6 +1,7 @@
 package com.aureusapps.android.extensions.test
 
 import android.content.Context
+import android.os.Build
 import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -77,7 +78,7 @@ class DocumentFileExtensionsInstrumentedTest {
 
     @Test
     fun test_copyTo() {
-        val targetParent = Files.createTempDirectory("tmp").toFile()
+        val targetParent = createTempDirectory()
         targetParent.mkdirs()
         val files = generateTempFiles(targetParent)
         try {
@@ -96,8 +97,17 @@ class DocumentFileExtensionsInstrumentedTest {
         }
     }
 
+    private fun createTempDirectory(): File {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Files.createTempDirectory("tmp").toFile()
+        } else {
+            createTempDir("tmp")
+        }
+    }
+
+
     private fun generateTempFiles(targetParent: File): List<Pair<File, File>> {
-        val root = Files.createTempDirectory("tmp").toFile()
+        val root = createTempDirectory()
         TestHelpers.generateFiles(
             root,
             listOf(

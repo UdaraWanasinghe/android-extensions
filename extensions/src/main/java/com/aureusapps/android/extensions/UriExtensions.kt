@@ -594,8 +594,8 @@ fun Uri.delete(context: Context): Boolean {
 fun Uri.findFile(context: Context, fileName: String): Uri? {
     var uri: Uri? = null
     try {
-        when {
-            isFileUri -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 uri = path
                     ?.let { File(it) }
                     ?.listFiles()
@@ -603,17 +603,13 @@ fun Uri.findFile(context: Context, fileName: String): Uri? {
                     ?.toUri()
             }
 
-            isTreeUri -> {
+            SCHEME_CONTENT -> {
                 uri = DocumentFile.fromTreeUri(context, this)
                     ?.findFile(fileName)
                     ?.uri
             }
         }
-
     } catch (_: Exception) {
-
-    } finally {
-
     }
     return uri
 }
