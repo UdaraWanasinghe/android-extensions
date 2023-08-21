@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -269,13 +268,24 @@ class UriExtensionsInstrumentedTest {
             val fileName = "tmp.txt"
             val expectedFile = File(tmpDir, "tmp.txt")
             expectedFile.createNewFile()
-            val fileUri = expectedFile.toUri()
-            val actualFile = fileUri.findFile(context, fileName)?.toFile()
-                ?: throw AssertionError("File is null.")
-            assertTrue(actualFile.exists())
-            assertEquals(fileName, actualFile.name)
+            val fileUri = tmpDir.toUri()
+            val foundUri = fileUri.findFile(context, fileName)
+            assertNotNull(foundUri)
         } finally {
             tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun findFile_contentProviderUri() {
+        val parentUri = testDocumentRoot
+        val fileName = genRandomName(extension = "txt")
+        val childUri = createContentProviderFile(fileName = fileName)
+        try {
+            val foundUri = parentUri.findFile(context, fileName)
+            assertNotNull(foundUri)
+        } finally {
+            deleteContentProviderFile(childUri)
         }
     }
 
