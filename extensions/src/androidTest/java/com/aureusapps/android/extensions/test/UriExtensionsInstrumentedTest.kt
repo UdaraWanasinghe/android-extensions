@@ -66,8 +66,8 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun getFileName_fileUri() {
-        val expectedName = genRandomName(extension = "txt")
         val textFile = createExternalStorageFile()
+        val expectedName = textFile.name
         try {
             val textFileUri = textFile.toUri()
             val actualName = textFileUri.fileName(context)
