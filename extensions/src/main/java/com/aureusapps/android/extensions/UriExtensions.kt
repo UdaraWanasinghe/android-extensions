@@ -305,17 +305,17 @@ fun Uri.createFile(
                 val parentFile = toFile()
                 if (parentFile.exists()) {
                     val childFile = File(parentFile, fileName)
-                    val ok = if (childFile.exists()) {
+                    val createFile = if (childFile.exists()) {
                         if (overwrite) {
-                            val exists = if (childFile.isDirectory) {
+                            val stillExists = if (childFile.isDirectory) {
                                 !childFile.deleteRecursively()
                             } else {
                                 !childFile.delete()
                             }
-                            if (exists) {
+                            if (stillExists) {
                                 onError(UriExtensionErrors.FAILED_TO_OVERWRITE)
                             }
-                            !exists
+                            !stillExists
                         } else {
                             onError(UriExtensionErrors.FILE_ALREADY_EXIST)
                             false
@@ -323,7 +323,7 @@ fun Uri.createFile(
                     } else {
                         true
                     }
-                    if (ok) {
+                    if (createFile) {
                         if (childFile.createNewFile()) {
                             fileUri = childFile.toUri()
                         } else {
@@ -339,7 +339,7 @@ fun Uri.createFile(
                 val parentDoc = DocumentFile.fromTreeUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(fileName)
-                    val ok = if (existing != null) {
+                    val createFile = if (existing != null) {
                         if (overwrite) {
                             if (existing.delete()) {
                                 true
@@ -354,7 +354,7 @@ fun Uri.createFile(
                     } else {
                         true
                     }
-                    if (ok) {
+                    if (createFile) {
                         val extension = fileName.substringAfterLast(".")
                         val mimeType = MimeTypeMap
                             .getSingleton()
@@ -390,33 +390,89 @@ fun Uri.createFile(
  *
  * @return The Uri of the created directory or existing directory, or null if the directory could not be created.
  */
-fun Uri.createDirectory(context: Context, dirName: String): Uri? {
+fun Uri.createDirectory(
+    context: Context,
+    dirName: String,
+    overwrite: Boolean = false,
+    onError: (UriExtensionErrors) -> Unit = {}
+): Uri? {
     var dirUri: Uri? = null
     try {
         when {
             isFileUri -> {
                 val parentFile = toFile()
-                val childFile = File(parentFile, dirName)
-                if (childFile.mkdirs()) {
-                    dirUri = childFile.toUri()
+                if (parentFile.exists()) {
+                    val childFile = File(parentFile, dirName)
+                    val createDir = if (childFile.exists()) {
+                        if (childFile.isDirectory) {
+                            false
+                        } else {
+                            if (overwrite) {
+                                val deleted = childFile.delete()
+                                if (!deleted) {
+                                    onError(UriExtensionErrors.FAILED_TO_OVERWRITE)
+                                }
+                                deleted
+                            } else {
+                                onError(UriExtensionErrors.FILE_ALREADY_EXIST)
+                                false
+                            }
+                        }
+                    } else {
+                        true
+                    }
+                    if (createDir) {
+                        if (childFile.mkdirs()) {
+                            dirUri = childFile.toUri()
+                        } else {
+                            onError(UriExtensionErrors.FILE_CREATION_FAILED)
+                        }
+                    }
+                } else {
+                    onError(UriExtensionErrors.PARENT_FILE_NOT_FOUND)
                 }
             }
 
             isTreeUri -> {
-                val root = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.takeIf { it.isDirectory }
-                dirUri = root
-                    ?.findFile(dirName)
-                    ?.takeIf { it.isDirectory }
-                    ?.uri ?: root
-                    ?.createDirectory(dirName)
-                    ?.uri
+                val parentDoc = DocumentFile.fromTreeUri(context, this)
+                if (parentDoc != null && parentDoc.exists()) {
+                    val existing = parentDoc.findFile(dirName)
+                    val createDir = if (existing != null) {
+                        if (existing.isDirectory) {
+                            false
+                        } else if (overwrite) {
+                            if (existing.delete()) {
+                                true
+                            } else {
+                                onError(UriExtensionErrors.FAILED_TO_OVERWRITE)
+                                false
+                            }
+                        } else {
+                            onError(UriExtensionErrors.FILE_ALREADY_EXIST)
+                            false
+                        }
+                    } else {
+                        true
+                    }
+                    if (createDir) {
+                        val childDoc = parentDoc.createDirectory(dirName)
+                        if (childDoc != null) {
+                            dirUri = childDoc.uri
+                        } else {
+                            onError(UriExtensionErrors.FILE_CREATION_FAILED)
+                        }
+                    }
+                } else {
+                    onError(UriExtensionErrors.PARENT_FILE_NOT_FOUND)
+                }
+            }
+
+            else -> {
+                onError(UriExtensionErrors.UNSUPPORTED_URI)
             }
         }
-
     } catch (_: Exception) {
-
+        onError(UriExtensionErrors.EXCEPTION_OCCURRED)
     }
     return dirUri
 }

@@ -248,6 +248,21 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
+    fun createDirectory_contentProviderUri() {
+        val tmpDir = testDocumentRoot
+        var dirUri: Uri? = null
+        try {
+            val dirName = "new_dir"
+            dirUri = tmpDir.createDirectory(context, dirName)
+                ?: throw AssertionError("Dir uri is null.")
+            val exists = checkContentProviderFileExist(dirUri)
+            assertTrue(exists)
+        } finally {
+            dirUri?.let { deleteContentProviderFile(it) }
+        }
+    }
+
+    @Test
     fun findFile_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
