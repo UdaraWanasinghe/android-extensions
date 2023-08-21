@@ -32,11 +32,12 @@ import com.aureusapps.android.extensions.test.utils.TestHelpers
 import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
 import com.aureusapps.android.extensions.writeBytes
-import com.squareup.okhttp.mockwebserver.MockResponse
-import com.squareup.okhttp.mockwebserver.MockWebServer
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
-import okio.Buffer
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert
 import org.junit.Assert.assertEquals
@@ -232,17 +233,17 @@ class UriExtensionsInstrumentedTest {
     @Test
     fun test_exists() {
         // check file uri
-        createExternalStorageFile()
-        var exists = textFile.toUri().exists(context)
+        val srcUri = createExternalStorageFile().toUri()
+        var exists = srcUri.exists(context)
         assertTrue(exists)
 
         // check http uri
         val server = hostFileContent()
-        val contentUrl = server.url("/$fileName").toString()
+        val contentUrl = server.url("hosted_text.txt").toString()
         val httpUri = Uri.parse(contentUrl)
         exists = httpUri.exists(context)
-        server.shutdown()
         assertTrue(exists)
+        server.shutdown()
     }
 
     @Test
@@ -313,14 +314,15 @@ class UriExtensionsInstrumentedTest {
 
         // http uri
         val server = hostFileContent()
-        val contentUrl = server.url("/hosted_text.txt").toString()
-        srcUri = Uri.parse(contentUrl)
-        targetParentFile = createTempDirectory()
-        targetParentUri = targetParentFile.toUri()
         try {
+            val fileName = "hosted_text.txt"
+            val contentUrl = server.url(fileName).toString()
+            srcUri = Uri.parse(contentUrl)
+            targetParentFile = createTempDirectory()
+            targetParentUri = targetParentFile.toUri()
             val copied = srcUri.copyTo(context, targetParentUri)
             assertTrue(copied)
-            val dstFile = File(targetParentFile, "hosted_text.txt")
+            val dstFile = File(targetParentFile, fileName)
             verifyFileContent(dstFile, "Sample text")
         } finally {
             server.shutdown()
@@ -330,14 +332,15 @@ class UriExtensionsInstrumentedTest {
 
     private fun hostFileContent(text: String = "Sample text"): MockWebServer {
         val server = MockWebServer()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse {
+                return MockResponse()
+                    .setResponseCode(200)
+                    .addHeader("Content-Type", "text/plain; charset=utf-8")
+                    .setBody(text)
+            }
+        }
         server.start()
-        val buffer = Buffer()
-        buffer.write(text.toByteArray())
-        server.enqueue(
-            MockResponse()
-                .setResponseCode(200)
-                .setBody(buffer)
-        )
         return server
     }
 

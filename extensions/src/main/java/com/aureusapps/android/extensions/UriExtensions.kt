@@ -547,7 +547,10 @@ fun Uri.fileSize(context: Context): Long {
 
         "http",
         "https" -> {
-            val con = URL(toString()).openConnection() as HttpURLConnection
+            val url = toString()
+            val con = URL(url).openConnection() as HttpURLConnection
+            con.connectTimeout = 20000
+            con.readTimeout = 20000
             con.connect()
             val len = con.contentLength.toLong()
             con.disconnect()
