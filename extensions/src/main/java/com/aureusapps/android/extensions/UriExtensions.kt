@@ -167,7 +167,6 @@ val Uri.isFileUri: Boolean
  *
  * @return The file name of the content, or null if the file name cannot be determined or error occurred.
  */
-@SuppressLint("DiscouragedApi")
 fun Uri.fileName(context: Context): String? {
     var fileName: String? = null
     try {
@@ -202,9 +201,7 @@ fun Uri.fileName(context: Context): String? {
                     ?.substringBefore("?")
             }
         }
-
     } catch (_: Exception) {
-
     }
     return fileName
 }
@@ -218,22 +215,30 @@ fun Uri.fileName(context: Context): String? {
 fun Uri.isDirectory(context: Context): Boolean {
     var result = false
     try {
-        when {
-            isFileUri -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 result = path
                     ?.let { File(it) }
                     ?.isDirectory ?: false
             }
 
-            isTreeUri -> {
-                result = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.isDirectory ?: false
+            SCHEME_CONTENT -> {
+                when {
+                    isTreeUri -> {
+                        result = DocumentFile
+                            .fromTreeUri(context, this)
+                            ?.isDirectory ?: false
+                    }
+
+                    isDocumentUri(context) -> {
+                        result = DocumentFile
+                            .fromSingleUri(context, this)
+                            ?.isDirectory ?: false
+                    }
+                }
             }
         }
-
     } catch (_: Exception) {
-
     }
     return result
 }
@@ -249,8 +254,8 @@ fun Uri.isDirectory(context: Context): Boolean {
 fun Uri.listFiles(context: Context): List<Uri>? {
     var uriList: List<Uri>? = null
     try {
-        when {
-            isFileUri -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 uriList = path
                     ?.let { File(it) }
                     ?.takeIf { it.isDirectory }
@@ -258,15 +263,13 @@ fun Uri.listFiles(context: Context): List<Uri>? {
                     ?.map { it.toUri() }
             }
 
-            isTreeUri -> {
+            SCHEME_CONTENT -> {
                 uriList = DocumentFile.fromTreeUri(context, this)
                     ?.listFiles()
                     ?.map { it.uri }
             }
         }
-
     } catch (_: Exception) {
-
     }
     return uriList
 }
@@ -281,9 +284,7 @@ fun Uri.isEmpty(context: Context): Boolean {
     var empty = false
     try {
         empty = listFiles(context)?.isEmpty() ?: false
-
     } catch (_: Exception) {
-
     }
     return empty
 }
@@ -686,9 +687,7 @@ fun Uri.openInputStream(context: Context): InputStream? {
                 }
             }
         }
-
     } catch (_: Exception) {
-
     }
     return inputStream
 }
@@ -800,9 +799,7 @@ fun Uri.readBytes(context: Context): ByteArray? {
     try {
         inputStream = openInputStream(context)
         bytes = inputStream?.readBytes()
-
     } catch (_: Exception) {
-
     } finally {
         inputStream?.closeQuietly()
     }
@@ -826,9 +823,7 @@ fun Uri.writeBytes(context: Context, bytes: ByteArray): Boolean {
         outputStream.write(bytes)
         outputStream.flush()
         result = true
-
     } catch (_: Exception) {
-
     } finally {
         outputStream?.closeQuietly()
     }

@@ -111,6 +111,36 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
+    fun checkIsDirectory_fileUri() {
+        val rootDir = createExternalStorageDirectory()
+        TestHelpers.generateFiles(
+            rootDir,
+            listOf(
+                DirectoryNode(
+                    "dir1",
+                    listOf(
+                        FileNode("file1")
+                    )
+                )
+            )
+        )
+        val file = File(rootDir, "dir1")
+        try {
+            val isDirectory = file.toUri().isDirectory(context)
+            assertTrue(isDirectory)
+        } finally {
+            file.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkIsDirectory_contentProviderUri() {
+        val rootUri = testDocumentRoot
+        val isDirectory = rootUri.isDirectory(context)
+        assertTrue(isDirectory)
+    }
+
+    @Test
     fun getFileList_fileUri() {
         val root = createExternalStorageDirectory()
         TestHelpers.generateFiles(
@@ -142,27 +172,19 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkExists_fileUri() {
-        val tmpDir = createExternalStorageDirectory()
+    fun getFileList_contentProviderUri() {
+        val parentUri = testDocumentRoot
+        var childUri: Uri? = null
         try {
-            val dirUri = tmpDir.toUri()
-            val exists = dirUri.exists(context)
-            assertTrue(exists)
+            val fileName = genRandomName(extension = "txt")
+            childUri = createContentProviderFile(fileName = fileName)
+            val actualUris = parentUri.listFiles(context)
+                ?: throw AssertionError("File list is null.")
+            assertTrue(actualUris.contains(childUri))
+            val expectedUris = getContentProviderFileList(parentUri)
+            assertTrue(expectedUris.containsAll(actualUris))
         } finally {
-            tmpDir.deleteRecursively()
-        }
-    }
-
-    @Test
-    fun checkExists_httpUri() {
-        val server = hostFileContent()
-        try {
-            val contentUrl = server.url("hosted_text.txt").toString()
-            val httpUri = Uri.parse(contentUrl)
-            val exists = httpUri.exists(context)
-            assertTrue(exists)
-        } finally {
-            server.shutdown()
+            childUri?.let { deleteContentProviderFile(it) }
         }
     }
 
@@ -175,29 +197,6 @@ class UriExtensionsInstrumentedTest {
             assertFalse(isEmpty)
         } finally {
             tmpDir.deleteRecursively()
-        }
-    }
-
-    @Test
-    fun checkIsDirectory_fileUri() {
-        val rootDir = createExternalStorageDirectory()
-        TestHelpers.generateFiles(
-            rootDir,
-            listOf(
-                DirectoryNode(
-                    "dir1",
-                    listOf(
-                        FileNode("file1")
-                    )
-                )
-            )
-        )
-        val file = File(rootDir, "dir1")
-        try {
-            val isDirectory = file.toUri().isDirectory(context)
-            assertTrue(isDirectory)
-        } finally {
-            file.deleteRecursively()
         }
     }
 
@@ -260,6 +259,31 @@ class UriExtensionsInstrumentedTest {
             assertTrue(exists)
         } finally {
             dirUri?.let { deleteContentProviderFile(it) }
+        }
+    }
+
+    @Test
+    fun checkExists_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            val dirUri = tmpDir.toUri()
+            val exists = dirUri.exists(context)
+            assertTrue(exists)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkExists_httpUri() {
+        val server = hostFileContent()
+        try {
+            val contentUrl = server.url("hosted_text.txt").toString()
+            val httpUri = Uri.parse(contentUrl)
+            val exists = httpUri.exists(context)
+            assertTrue(exists)
+        } finally {
+            server.shutdown()
         }
     }
 
@@ -424,7 +448,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_readToBuffer() {
+    fun readToBuffer_fileUri() {
         val textFile = createExternalStorageFile()
         try {
             val buffer = textFile.toUri().readToBuffer(context)
@@ -512,6 +536,28 @@ class UriExtensionsInstrumentedTest {
             null
         )
         return cursor?.use { it.count > 0 } ?: false
+    }
+
+    private fun getContentProviderFileList(dirUri: Uri): List<Uri> {
+        val documentId = DocumentsContract.getDocumentId(dirUri)
+        val documentsUri = DocumentsContract.buildChildDocumentsUriUsingTree(dirUri, documentId)
+        val cursor = context.contentResolver.query(
+            documentsUri,
+            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID),
+            null,
+            null,
+            null
+        )
+        return cursor?.use {
+            val uris = mutableListOf<Uri>()
+            while (it.moveToNext()) {
+                val id = it.getString(0)
+                uris.add(
+                    DocumentsContract.buildDocumentUriUsingTree(dirUri, id)
+                )
+            }
+            uris
+        } ?: emptyList()
     }
 
     private fun deleteContentProviderFile(documentUri: Uri) {
