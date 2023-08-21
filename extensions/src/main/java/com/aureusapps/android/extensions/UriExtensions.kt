@@ -51,6 +51,7 @@ val Uri.isTreeUri: Boolean
 /**
  * Test if the given URI represents specific root backed by [DocumentsProvider].
  */
+@Suppress("unused")
 fun Uri.isRootUri(context: Context): Boolean {
     // content://com.example/root/
     // content://com.example/root/sdcard/
@@ -66,6 +67,7 @@ fun Uri.isRootUri(context: Context): Boolean {
 /**
  * Test if the given URI represents a [DocumentsContract.Document] backed by a DocumentsProvider.
  */
+@Suppress("unused")
 fun Uri.isDocumentUri(context: Context): Boolean {
     // content://com.example/document/12/
     // content://com.example/tree/12/document/24/
@@ -80,6 +82,7 @@ fun Uri.isDocumentUri(context: Context): Boolean {
  * @param defaultValue The default value to return if the query does not yield a valid result.
  * @return The integer value from the specified column, or the defaultValue if not found or invalid.
  */
+@Suppress("unused")
 fun Uri.queryForInt(
     context: Context,
     column: String,
@@ -132,6 +135,7 @@ fun Uri.queryForLong(
  * @param defaultValue The default value to return if the query does not yield a valid result.
  * @return The string value from the specified column, or the defaultValue if not found or invalid.
  */
+@Suppress("unused")
 fun Uri.queryForString(
     context: Context,
     column: String,
@@ -398,8 +402,8 @@ fun Uri.createDirectory(
 ): Uri? {
     var dirUri: Uri? = null
     try {
-        when {
-            isFileUri -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 val parentFile = toFile()
                 if (parentFile.exists()) {
                     val childFile = File(parentFile, dirName)
@@ -433,7 +437,7 @@ fun Uri.createDirectory(
                 }
             }
 
-            isTreeUri -> {
+            SCHEME_CONTENT -> {
                 val parentDoc = DocumentFile.fromTreeUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(dirName)
@@ -496,9 +500,15 @@ fun Uri.exists(context: Context): Boolean {
             }
 
             SCHEME_CONTENT -> {
-                exists = DocumentFile
-                    .fromSingleUri(context, this)
-                    ?.exists() ?: false
+                exists = if (isTreeUri) {
+                    DocumentFile
+                        .fromTreeUri(context, this)
+                        ?.exists() ?: false
+                } else {
+                    DocumentFile
+                        .fromSingleUri(context, this)
+                        ?.exists() ?: false
+                }
             }
 
             SCHEME_ANDROID_RESOURCE -> {
@@ -524,12 +534,6 @@ fun Uri.exists(context: Context): Boolean {
                 }
             }
 
-            "tree" -> {
-                exists = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.exists() ?: false
-            }
-
             "http",
             "https" -> {
                 val url = URL(toString())
@@ -538,14 +542,8 @@ fun Uri.exists(context: Context): Boolean {
                 exists = connection.responseCode == 200
                 connection.disconnect()
             }
-
-            else -> {
-                throw Exception("Unknown Uri scheme.")
-            }
         }
-
     } catch (_: Exception) {
-
     }
     return exists
 }
@@ -618,39 +616,6 @@ fun Uri.findFile(context: Context, fileName: String): Uri? {
 
     }
     return uri
-}
-
-/**
- * Checks if a file with the given name exists within the directory specified by the Uri.
- *
- * @param context The android context.
- * @param fileName The name of the file to check for existence.
- *
- * @return `true` if the file exists, `false` otherwise.
- */
-fun Uri.fileExists(context: Context, fileName: String): Boolean {
-    var exists = false
-    try {
-        when {
-            isFileUri -> {
-                exists = path
-                    ?.let { File(it) }
-                    ?.takeIf { it.isDirectory }
-                    ?.let { File(it, fileName) }
-                    ?.exists() ?: false
-            }
-
-            isTreeUri -> {
-                exists = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.findFile(fileName) != null
-            }
-        }
-
-    } catch (_: Exception) {
-
-    }
-    return exists
 }
 
 /**

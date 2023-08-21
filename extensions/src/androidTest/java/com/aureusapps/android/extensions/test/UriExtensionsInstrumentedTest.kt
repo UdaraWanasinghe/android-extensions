@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
@@ -48,7 +49,6 @@ import java.nio.file.Files
 import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import kotlin.io.path.writeText
 
 @RunWith(AndroidJUnit4::class)
 class UriExtensionsInstrumentedTest {
@@ -252,8 +252,10 @@ class UriExtensionsInstrumentedTest {
         var dirUri: Uri? = null
         try {
             val dirName = "new_dir"
-            dirUri = tmpDir.createDirectory(context, dirName)
-                ?: throw AssertionError("Dir uri is null.")
+            var error: String? = null
+            dirUri = tmpDir.createDirectory(context, dirName) {
+                error = it.message
+            } ?: throw AssertionError("Dir uri is null: $error")
             val exists = checkContentProviderFileExist(dirUri)
             assertTrue(exists)
         } finally {
@@ -451,13 +453,21 @@ class UriExtensionsInstrumentedTest {
     }
 
     private fun createExternalStorageDirectory(): File {
-        return Files.createTempDirectory("tmp").toFile()
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Files.createTempDirectory("tmp").toFile()
+        } else {
+            createTempDir("tmp")
+        }
     }
 
     private fun createExternalStorageFile(text: String = "Sample text"): File {
-        val file = Files.createTempFile("tmp", ".txt")
+        val file = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Files.createTempFile("tmp", ".txt").toFile()
+        } else {
+            createTempFile("tmp", ".txt")
+        }
         file.writeText(text)
-        return file.toFile()
+        return file
     }
 
     private fun verifyFileContent(file: File, expected: String = "Sample text") {
@@ -497,6 +507,7 @@ class UriExtensionsInstrumentedTest {
         val cursor = context.contentResolver.query(
             fileUri,
             arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID),
+            null,
             null,
             null
         )
@@ -540,6 +551,7 @@ class UriExtensionsInstrumentedTest {
                         cont.resume(uri)
                     }
                     val intent = Intent(context, SelectTestDirectoryActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                 }
                 SelectTestDirectoryActivity.onDocumentSelected = null
