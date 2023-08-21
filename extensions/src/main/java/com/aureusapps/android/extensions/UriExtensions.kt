@@ -25,6 +25,15 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
+enum class UriExtensionErrors(val message: String) {
+    PARENT_FILE_NOT_FOUND("Parent file does not exist."),
+    FILE_ALREADY_EXIST("File already exist."),
+    FAILED_TO_OVERWRITE("Tried to overwrite the file. But failed to delete it."),
+    FILE_CREATION_FAILED("Failed to create file."),
+    UNSUPPORTED_URI("Given uri is unsupported."),
+    EXCEPTION_OCCURRED("Exception occurred.")
+}
+
 /**
  * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
  */
@@ -277,42 +286,99 @@ fun Uri.isEmpty(context: Context): Boolean {
 
 /**
  * Creates a new file inside the directory given by uri.
- * File uris and document tree uris are supported.
  *
  * @param context The Android context.
- * @param displayName The name of the new file.
- * @param mimeType The mime type of the new file.
+ * @param fileName The name of the new file.
  *
  * @return Uri of the newly created file or null if the file creation failed.
  */
 fun Uri.createFile(
     context: Context,
-    displayName: String,
-    mimeType: String
+    fileName: String,
+    overwrite: Boolean = false,
+    onError: (UriExtensionErrors) -> Unit = {}
 ): Uri? {
     var fileUri: Uri? = null
     try {
         when {
             isFileUri -> {
-                fileUri = path
-                    ?.let { File(it) }
-                    ?.takeIf { it.isDirectory }
-                    ?.let { File(it, displayName) }
-                    ?.toUri()
+                val parentFile = toFile()
+                if (parentFile.exists()) {
+                    val childFile = File(parentFile, fileName)
+                    val ok = if (childFile.exists()) {
+                        if (overwrite) {
+                            val exists = if (childFile.isDirectory) {
+                                !childFile.deleteRecursively()
+                            } else {
+                                !childFile.delete()
+                            }
+                            if (exists) {
+                                onError(UriExtensionErrors.FAILED_TO_OVERWRITE)
+                            }
+                            !exists
+                        } else {
+                            onError(UriExtensionErrors.FILE_ALREADY_EXIST)
+                            false
+                        }
+                    } else {
+                        true
+                    }
+                    if (ok) {
+                        if (childFile.createNewFile()) {
+                            fileUri = childFile.toUri()
+                        } else {
+                            onError(UriExtensionErrors.FILE_CREATION_FAILED)
+                        }
+                    }
+                } else {
+                    onError(UriExtensionErrors.PARENT_FILE_NOT_FOUND)
+                }
             }
 
             isTreeUri -> {
-                fileUri = DocumentFile
-                    .fromTreeUri(context, this)
-                    ?.createFile(mimeType, displayName)
-                    ?.uri
+                val parentDoc = DocumentFile.fromTreeUri(context, this)
+                if (parentDoc != null && parentDoc.exists()) {
+                    val existing = parentDoc.findFile(fileName)
+                    val ok = if (existing != null) {
+                        if (overwrite) {
+                            if (existing.delete()) {
+                                true
+                            } else {
+                                onError(UriExtensionErrors.FAILED_TO_OVERWRITE)
+                                false
+                            }
+                        } else {
+                            onError(UriExtensionErrors.FILE_ALREADY_EXIST)
+                            false
+                        }
+                    } else {
+                        true
+                    }
+                    if (ok) {
+                        val extension = fileName.substringAfterLast(".")
+                        val mimeType = MimeTypeMap
+                            .getSingleton()
+                            .getMimeTypeFromExtension(extension)
+                            ?: "application/octet-stream"
+                        val childDoc = parentDoc.createFile(mimeType, fileName)
+                        if (childDoc != null) {
+                            fileUri = childDoc.uri
+                        } else {
+                            onError(UriExtensionErrors.FILE_CREATION_FAILED)
+                        }
+                    }
+                } else {
+                    onError(UriExtensionErrors.PARENT_FILE_NOT_FOUND)
+                }
+            }
+
+            else -> {
+                onError(UriExtensionErrors.UNSUPPORTED_URI)
             }
         }
-
-    } catch (_: Exception) {
-
+    } catch (e: Exception) {
+        onError(UriExtensionErrors.EXCEPTION_OCCURRED)
     }
-
     return fileUri
 }
 
@@ -329,10 +395,11 @@ fun Uri.createDirectory(context: Context, dirName: String): Uri? {
     try {
         when {
             isFileUri -> {
-                dirUri = path
-                    ?.let { File(it, dirName) }
-                    ?.takeIf { it.isDirectory || it.mkdir() }
-                    ?.toUri()
+                val parentFile = toFile()
+                val childFile = File(parentFile, dirName)
+                if (childFile.mkdirs()) {
+                    dirUri = childFile.toUri()
+                }
             }
 
             isTreeUri -> {

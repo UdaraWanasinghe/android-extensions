@@ -1,16 +1,14 @@
 package com.aureusapps.android.extensions.test
 
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.provider.DocumentsContract
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,7 +17,6 @@ import com.aureusapps.android.extensions.createDirectory
 import com.aureusapps.android.extensions.createFile
 import com.aureusapps.android.extensions.delete
 import com.aureusapps.android.extensions.exists
-import com.aureusapps.android.extensions.fileExists
 import com.aureusapps.android.extensions.fileName
 import com.aureusapps.android.extensions.findFile
 import com.aureusapps.android.extensions.isDirectory
@@ -38,17 +35,16 @@ import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.RecordedRequest
-import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.UUID
 import kotlin.coroutines.resume
@@ -61,11 +57,6 @@ class UriExtensionsInstrumentedTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val testDocumentRoot: Uri
 
-    private val fileName = "sample_text.txt"
-    private val fileContent = "This is a sample text"
-    private val textFile = File(Environment.getExternalStorageDirectory(), fileName)
-    private val cacheFile = File(context.cacheDir, "cache_file.txt")
-
     init {
         val preferences = context.getSharedPreferences(PREFERENCES_NAME, MODE_PRIVATE)
         val testTreeUri = preferences.getString(TEST_DIR_KEY, null)?.toUri()
@@ -74,133 +65,273 @@ class UriExtensionsInstrumentedTest {
         testDocumentRoot = DocumentsContract.buildDocumentUriUsingTree(testTreeUri, documentId)
     }
 
-    @After
-    @Before
-    fun removeResiduals() {
-        // delete text file from content provider and physically
-        val textFileUri = findTextFileInContentProvider()
-        if (textFileUri != null) {
-            deleteTextFile(textFileUri)
-        }
-        // delete text file in external storage
-        if (textFile.exists()) {
-            textFile.delete()
-        }
-        // delete cache file
-        if (cacheFile.exists()) {
-            cacheFile.delete()
+    @Test
+    fun getFileName_fileUri() {
+        val expectedName = genRandomName(extension = "txt")
+        val textFile = createExternalStorageFile()
+        try {
+            val textFileUri = textFile.toUri()
+            val actualName = textFileUri.fileName(context)
+            assertEquals(expectedName, actualName)
+        } finally {
+            textFile.deleteRecursively()
         }
     }
 
     @Test
-    fun test_getContentProviderUriFileName() {
-        val textFileUri = createContentProviderTextFile()
-        val resultFileName = textFileUri.fileName(context)
-        assertEquals(fileName, resultFileName)
+    fun getFileName_contentProviderUri() {
+        val expectedName = genRandomName(extension = "txt")
+        val textFileUri = createContentProviderFile(fileName = expectedName)
+        try {
+            val actualName = textFileUri.fileName(context)
+            assertEquals(expectedName, actualName)
+        } finally {
+            deleteContentProviderFile(textFileUri)
+        }
     }
 
     @Test
-    fun test_getFileName() {
-        // file uri
-        createExternalStorageFile()
-        var name = Uri.fromFile(textFile).fileName(context)
-        assertEquals(fileName, name)
-
-        // android resource uri
+    fun getFileName_androidResourceUri() {
+        val expectedName = "sample_text"
         val resourceUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
-        name = resourceUri.fileName(context)
-        assertEquals("sample_text", name)
-
-        // http uris
-        val httpUri1 = Uri.parse("http://localhost:4648/$fileName")
-        val resultFileName1 = httpUri1.fileName(context)
-        assertEquals(fileName, resultFileName1)
-        val httpUri2 = Uri.parse("http://localhost:4648/$fileName?param1=s&param2=q")
-        val resultFileName2 = httpUri2.fileName(context)
-        assertEquals(fileName, resultFileName2)
+        val actualName = resourceUri.fileName(context)
+        assertEquals(expectedName, actualName)
     }
 
     @Test
-    fun test_listFiles() {
-        createExternalStorageFile()
-        val files = textFile
-            .parentFile
-            ?.toUri()
-            ?.listFiles(context)
-        val fileListed = files?.any { it.fileName(context) == fileName } ?: false
-        assertTrue(fileListed)
+    fun getFileName_httpUri() {
+        val expectedName = "hosted_text.txt"
+        // pattern 1
+        val httpUri1 = Uri.parse("http://localhost:4648/$expectedName")
+        var actualName = httpUri1.fileName(context)
+        assertEquals(expectedName, actualName)
+        // pattern 2
+        val httpUri2 = Uri.parse("http://localhost:4648/$expectedName?param1=s&param2=q")
+        actualName = httpUri2.fileName(context)
+        assertEquals(expectedName, actualName)
     }
 
     @Test
-    fun test_isEmpty() {
-        createExternalStorageFile()
-        val isEmpty = textFile
-            .parentFile
-            ?.toUri()
-            ?.isEmpty(context)
-
-        Assert.assertFalse(isEmpty!!)
-    }
-
-    @Test
-    fun test_isDirectory() {
-        val rootName = UUID.randomUUID().toString()
+    fun getFileList_fileUri() {
+        val root = createExternalStorageDirectory()
         TestHelpers.generateFiles(
-            Environment.getExternalStorageDirectory(),
+            root,
+            listOf(
+                FileNode("file1"),
+                DirectoryNode(
+                    "dir1",
+                    listOf(
+                        FileNode("file2")
+                    )
+                ),
+                FileNode("file3")
+            )
+        )
+        try {
+            val rootUri = root.toUri()
+            val fileList = rootUri.listFiles(context) ?: emptyList()
+            val file1Uri = rootUri.buildUpon().appendPath("file1").build()
+            val dir1Uri = rootUri.buildUpon().appendPath("dir1").build()
+            val file2Uri = rootUri.buildUpon().appendPath("file3").build()
+            assertArrayEquals(
+                arrayOf(file1Uri, dir1Uri, file2Uri),
+                fileList.toTypedArray()
+            )
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkExists_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            val dirUri = tmpDir.toUri()
+            val exists = dirUri.exists(context)
+            assertTrue(exists)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkExists_httpUri() {
+        val server = hostFileContent()
+        try {
+            val contentUrl = server.url("hosted_text.txt").toString()
+            val httpUri = Uri.parse(contentUrl)
+            val exists = httpUri.exists(context)
+            assertTrue(exists)
+        } finally {
+            server.shutdown()
+        }
+    }
+
+    @Test
+    fun checkIsEmpty_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            File(tmpDir, "file1.txt").createNewFile()
+            val isEmpty = tmpDir.toUri().isEmpty(context)
+            assertFalse(isEmpty)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkIsDirectory_fileUri() {
+        val rootDir = createExternalStorageDirectory()
+        TestHelpers.generateFiles(
+            rootDir,
             listOf(
                 DirectoryNode(
-                    rootName,
+                    "dir1",
                     listOf(
-                        FileNode(
-                            UUID.randomUUID().toString()
-                        )
+                        FileNode("file1")
                     )
                 )
             )
         )
-        val file = File(Environment.getExternalStorageDirectory(), rootName)
-        val result = file
-            .toUri()
-            .isDirectory(context)
-        file.deleteRecursively()
-        assertTrue(result)
-    }
-
-    @Test
-    fun test_createFile() {
-        val directory = Environment.getExternalStorageDirectory()
-        val name = "new_file.txt"
-        val uri = directory
-            .toUri()
-            .createFile(context, name, "text/plain")
-        Assert.assertNotNull(uri)
-        assertEquals(name, uri?.fileName(context))
-    }
-
-    @Test
-    fun test_createDirectory() {
-        val parentDir = Environment.getExternalStorageDirectory()
-        val name = System.currentTimeMillis().toString()
-        val dir = File(parentDir, name)
-        val dirUri = parentDir
-            .toUri()
-            .createDirectory(context, name)
-        assertTrue(dir.exists() && dir.isDirectory)
-        assertEquals(
-            dir.absolutePath,
-            dirUri?.path
-        )
-        if (dir.exists()) {
-            dir.delete()
+        val file = File(rootDir, "dir1")
+        try {
+            val isDirectory = file.toUri().isDirectory(context)
+            assertTrue(isDirectory)
+        } finally {
+            file.deleteRecursively()
         }
     }
 
     @Test
-    fun test_deleteRecursively() {
-        val rootName = UUID.randomUUID().toString()
-        val root = File(context.cacheDir, rootName)
+    fun createFile_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            val fileName = "new_file.txt"
+            val fileUri = tmpDir.toUri().createFile(context, fileName)
+            assertNotNull(fileUri)
+            val newFile = File(tmpDir, fileName)
+            assertTrue(newFile.exists() && newFile.isFile)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun createFile_contentProviderUri() {
+        val parentUri = testDocumentRoot
+        var childUri: Uri? = null
+        val fileName = genRandomName(extension = "txt")
+        try {
+            var error: String? = null
+            childUri = parentUri.createFile(context, fileName) {
+                error = it.message
+            } ?: throw AssertionError("File uri is null: $error")
+            val exists = checkContentProviderFileExist(childUri)
+            assertTrue(exists)
+        } finally {
+            childUri?.let { deleteContentProviderFile(it) }
+        }
+    }
+
+    @Test
+    fun createDirectory_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            val dirName = "new_dir"
+            val dirUri = tmpDir.toUri().createDirectory(context, dirName)
+            assertNotNull(dirUri)
+            val childDir = File(tmpDir, dirName)
+            assertTrue(childDir.exists() && childDir.isDirectory)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun findFile_fileUri() {
+        val tmpDir = createExternalStorageDirectory()
+        try {
+            val fileName = "tmp.txt"
+            val expectedFile = File(tmpDir, "tmp.txt")
+            expectedFile.createNewFile()
+            val fileUri = expectedFile.toUri()
+            val actualFile = fileUri.findFile(context, fileName)?.toFile()
+                ?: throw AssertionError("File is null.")
+            assertTrue(actualFile.exists())
+            assertEquals(fileName, actualFile.name)
+        } finally {
+            tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun test_copyUri() {
+        // file uri
+        val srcFile = createExternalStorageFile()
+        var srcUri = Uri.fromFile(srcFile)
+        var targetParentFile = createExternalStorageDirectory()
+        var targetParentUri = targetParentFile.toUri()
+        try {
+            val copied = srcUri.copyTo(context, targetParentUri)
+            assertTrue(copied)
+            val dstFile = File(targetParentFile, srcFile.name)
+            verifyFileContent(dstFile)
+        } finally {
+            srcFile.delete()
+            targetParentFile.deleteRecursively()
+        }
+
+        // content provider uri
+        val srcName = genRandomName(extension = "txt")
+        srcUri = createContentProviderFile(fileName = srcName)
+        targetParentFile = createExternalStorageDirectory()
+        targetParentUri = targetParentFile.toUri()
+        try {
+            val copied = srcUri.copyTo(context, targetParentUri)
+            assertTrue(copied)
+            val dstFile = File(targetParentFile, srcName)
+            verifyFileContent(dstFile)
+        } finally {
+            deleteContentProviderFile(srcUri)
+            targetParentFile.deleteRecursively()
+        }
+
+        // android resource uri
+        srcUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
+        targetParentFile = createExternalStorageDirectory()
+        targetParentUri = targetParentFile.toUri()
+        try {
+            val copied = srcUri.copyTo(context, targetParentUri)
+            assertTrue(copied)
+            val dstFile = File(targetParentFile, "sample_text")
+            verifyFileContent(dstFile, "This is a sample text")
+        } finally {
+            targetParentFile.deleteRecursively()
+        }
+
+        // http uri
+        val server = hostFileContent()
+        try {
+            val fileName = "hosted_text.txt"
+            val contentUrl = server.url(fileName).toString()
+            srcUri = Uri.parse(contentUrl)
+            targetParentFile = createExternalStorageDirectory()
+            targetParentUri = targetParentFile.toUri()
+            val copied = srcUri.copyTo(context, targetParentUri)
+            assertTrue(copied)
+            val dstFile = File(targetParentFile, fileName)
+            verifyFileContent(dstFile, "Sample text")
+        } finally {
+            server.shutdown()
+            targetParentFile.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun delete_fileUri() {
+        val rootDir = createExternalStorageDirectory()
         TestHelpers.generateFiles(
-            root,
+            rootDir,
             listOf(
                 FileNode("1"),
                 DirectoryNode(
@@ -220,113 +351,13 @@ class UriExtensionsInstrumentedTest {
                 FileNode("3")
             )
         )
-        val deleted = root
-            .toUri()
-            .delete(context)
-        assertTrue(deleted)
-        if (root.exists()) {
-            root.deleteRecursively()
-            Assert.fail()
-        }
-    }
-
-    @Test
-    fun test_exists() {
-        // check file uri
-        val srcUri = createExternalStorageFile().toUri()
-        var exists = srcUri.exists(context)
-        assertTrue(exists)
-
-        // check http uri
-        val server = hostFileContent()
-        val contentUrl = server.url("hosted_text.txt").toString()
-        val httpUri = Uri.parse(contentUrl)
-        exists = httpUri.exists(context)
-        assertTrue(exists)
-        server.shutdown()
-    }
-
-    @Test
-    fun test_findFile() {
-        createExternalStorageFile()
-        val file = Environment
-            .getExternalStorageDirectory()
-            .toUri()
-            .findFile(context, fileName)
-        Assert.assertNotNull(file)
-        assertEquals(fileName, file?.fileName(context))
-    }
-
-    @Test
-    fun test_fileExists() {
-        createExternalStorageFile()
-        val result = textFile
-            .parentFile
-            ?.toUri()
-            ?.fileExists(context, fileName) ?: false
-        assertTrue(result)
-    }
-
-    @Test
-    fun test_copyUri() {
-        // file uri
-        val srcFile = createTempTextFile()
-        var srcUri = Uri.fromFile(srcFile)
-        var targetParentFile = createTempDirectory()
-        var targetParentUri = targetParentFile.toUri()
+        val rootUri = rootDir.toUri()
         try {
-            val copied = srcUri.copyTo(context, targetParentUri)
-            assertTrue(copied)
-            val dstFile = File(targetParentFile, srcFile.name)
-            verifyFileContent(dstFile)
+            val deleted = rootUri.delete(context)
+            assertTrue(deleted)
+            assertFalse(rootDir.exists())
         } finally {
-            srcFile.delete()
-            targetParentFile.deleteRecursively()
-        }
-
-        // content provider uri
-        val srcName = genRandomName(extension = "txt")
-        srcUri = createContentProviderTextFile(fileName = srcName)
-        targetParentFile = createTempDirectory()
-        targetParentUri = targetParentFile.toUri()
-        try {
-            val copied = srcUri.copyTo(context, targetParentUri)
-            assertTrue(copied)
-            val dstFile = File(targetParentFile, srcName)
-            verifyFileContent(dstFile)
-        } finally {
-            deleteContentProviderFile(srcUri)
-            targetParentFile.deleteRecursively()
-        }
-
-        // android resource uri
-        srcUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
-        targetParentFile = createTempDirectory()
-        targetParentUri = targetParentFile.toUri()
-        try {
-            val copied = srcUri.copyTo(context, targetParentUri)
-            assertTrue(copied)
-            val dstFile = File(targetParentFile, "sample_text")
-            verifyFileContent(dstFile, "This is a sample text")
-        } finally {
-            targetParentFile.deleteRecursively()
-        }
-
-        // http uri
-        val server = hostFileContent()
-        try {
-            val fileName = "hosted_text.txt"
-            val contentUrl = server.url(fileName).toString()
-            srcUri = Uri.parse(contentUrl)
-            targetParentFile = createTempDirectory()
-            targetParentUri = targetParentFile.toUri()
-            val copied = srcUri.copyTo(context, targetParentUri)
-            assertTrue(copied)
-            val dstFile = File(targetParentFile, fileName)
-            verifyFileContent(dstFile, "Sample text")
-        } finally {
-            server.shutdown()
-            targetParentFile.deleteRecursively()
+            rootDir.deleteRecursively()
         }
     }
 
@@ -345,22 +376,24 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_readBytes() {
-        createExternalStorageFile()
-        val bytes = textFile
-            .toUri()
-            .readBytes(context)
-        if (bytes == null) {
-            Assert.fail()
-        } else {
-            Assert.assertNotNull(bytes)
-            val string = String(bytes)
-            assertEquals(fileContent, string)
+    fun readBytes_fileUri() {
+        val textFile = createExternalStorageFile()
+        try {
+            val textFileUri = textFile.toUri()
+            val bytes = textFileUri.readBytes(context)
+            if (bytes == null) {
+                Assert.fail()
+            } else {
+                val string = String(bytes)
+                assertEquals("Sample text", string)
+            }
+        } finally {
+            textFile.delete()
         }
     }
 
     @Test
-    fun test_writeBytes() {
+    fun writeBytes_fileUri() {
         val tempFile = File.createTempFile("text", null)
         val sampleText = "Sample"
         val written = tempFile
@@ -374,21 +407,24 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun test_readToBuffer() {
-        createExternalStorageFile()
-        val buffer = textFile
-            .toUri()
-            .readToBuffer(context)
-        if (buffer == null) {
-            Assert.fail()
-        } else {
-            val bytes = ByteArray(buffer.remaining())
-            buffer.get(bytes)
-            val string = String(bytes)
-            assertEquals(fileContent, string)
+        val textFile = createExternalStorageFile()
+        try {
+            val buffer = textFile.toUri().readToBuffer(context)
+            if (buffer == null) {
+                Assert.fail()
+            } else {
+                val bytes = ByteArray(buffer.remaining())
+                buffer.get(bytes)
+                val string = String(bytes)
+                assertEquals("Sample text", string)
+            }
+        } finally {
+            textFile.delete()
         }
     }
 
-    private fun genRandomName(extension: String? = null): String {
+    @Suppress("SameParameterValue")
+    private fun genRandomName(extension: String?): String {
         return UUID.randomUUID().toString().let {
             if (extension != null) {
                 "$it.$extension"
@@ -398,54 +434,22 @@ class UriExtensionsInstrumentedTest {
         }
     }
 
-    /**
-     * Returns uri of the text file in the content provider or
-     * null if no such file in the content provider.
-     *
-     * @return Uri of the text file or null if file not in the content provider.
-     */
-    private fun findTextFileInContentProvider(): Uri? {
-        val textFile = File(Environment.getExternalStorageDirectory(), fileName)
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val cursor = context.contentResolver.query(
-            MediaStore.Files.getContentUri("external"),
-            arrayOf(
-                MediaStore.Files.FileColumns._ID,
-                MediaStore.Files.FileColumns.DATA
-            ),
-            "${MediaStore.Files.FileColumns.DATA}=?",
-            arrayOf(textFile.absolutePath),
-            null
-        ) ?: throw NullPointerException("Cursor cannot be null")
-        if (cursor.count == 1) {
-            // file exists
-            cursor.moveToFirst()
-            val idIndex = cursor.getColumnIndex(MediaStore.Files.FileColumns._ID)
-            val fileId = cursor.getLong(idIndex)
-            val fileUri = MediaStore.Files.getContentUri("external", fileId)
-            cursor.close()
-            return fileUri
-        }
-        return null
+    private fun createExternalStorageDirectory(): File {
+        return Files.createTempDirectory("tmp").toFile()
     }
 
-    private fun createTempTextFile(text: String = "Sample text"): File {
+    private fun createExternalStorageFile(text: String = "Sample text"): File {
         val file = Files.createTempFile("tmp", ".txt")
         file.writeText(text)
         return file.toFile()
     }
 
-    private fun createTempDirectory(): File {
-        return Files.createTempDirectory("tmp").toFile()
+    private fun verifyFileContent(file: File, expected: String = "Sample text") {
+        val text = file.readText()
+        assertEquals(expected, text)
     }
 
-    /**
-     * Creates text file in the external storage and returns content uri of the file.
-     * Additionally, this function will delete the existing file and written content will be verified.
-     *
-     * @return Content uri of the text file.
-     */
-    private fun createContentProviderTextFile(
+    private fun createContentProviderFile(
         fileName: String = genRandomName(extension = "txt"),
         text: String = "Sample text"
     ): Uri {
@@ -466,67 +470,21 @@ class UriExtensionsInstrumentedTest {
         return textFileUri
     }
 
-    /**
-     * Creates text file in the external storage.
-     */
-    private fun createExternalStorageFile(
-        text: String = "Sample text"
-    ): File {
-        val textFile = Files.createTempFile("tmp", ".txt").toFile()
-        val byteArray = text.toByteArray()
-        val inputStream = ByteArrayInputStream(byteArray)
-        val outputStream = FileOutputStream(textFile)
-        val buffer = ByteArray(8192)
-        var read: Int
-        while (inputStream.read(buffer).also { read = it } != -1) {
-            outputStream.write(buffer, 0, read)
-        }
-        outputStream.flush()
-        outputStream.close()
-        inputStream.close()
-        verifyFileContent(textFile)
-        return textFile
-    }
-
-    private fun verifyFileContent(file: File, expected: String = "Sample text") {
-        val text = file.readText()
-        assertEquals(expected, text)
-    }
-
-    /**
-     * Deletes file given by the uri.
-     *
-     * @param textFileUri uri of the file to delete.
-     */
-    private fun deleteTextFile(textFileUri: Uri) {
-        when (textFileUri.scheme) {
-            ContentResolver.SCHEME_CONTENT -> {
-                // delete from content provider
-                context.contentResolver.delete(textFileUri, null, null)
-                // sometimes deleting from content provider does not
-                // delete physically from the device
-                // delete physical file if it exists
-                if (textFile.exists()) {
-                    textFile.delete()
-                }
-            }
-
-            ContentResolver.SCHEME_FILE -> {
-                // if uri is from a file, delete it
-                val file = File(textFileUri.toString().removePrefix("file://"))
-                file.delete()
-            }
-        }
-    }
-
-    /**
-     * Verify text file content given by the content provider uri.
-     */
     private fun verifyContentProviderFile(fileUri: Uri, expectedText: String = "Sample text") {
         val input = context.contentResolver.openInputStream(fileUri)
             ?: throw AssertionError("Failed to open file uri.")
         val text = input.readText()
         assertEquals(expectedText, text)
+    }
+
+    private fun checkContentProviderFileExist(fileUri: Uri): Boolean {
+        val cursor = context.contentResolver.query(
+            fileUri,
+            arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID),
+            null,
+            null
+        )
+        return cursor?.use { it.count > 0 } ?: false
     }
 
     private fun deleteContentProviderFile(documentUri: Uri) {

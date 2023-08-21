@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.InputStream
@@ -78,7 +77,7 @@ object BitmapUtils {
      * @param bitmap The Bitmap image to be saved.
      * @param directoryUri The Uri of the directory where the image should be saved.
      * This could be a file uri or a document tree uri.
-     * @param displayName The display name of the image file.
+     * @param fileName The display name of the image file.
      * @param compressFormat The format to use for compressing the image (default: PNG).
      * @param compressQuality The quality level to use for compressing the image (default: 100).
      *
@@ -89,18 +88,16 @@ object BitmapUtils {
         context: Context,
         bitmap: Bitmap,
         directoryUri: Uri,
-        displayName: String,
+        fileName: String,
         compressFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.PNG,
         compressQuality: Int = 100
     ): Uri? {
         var outputStream: OutputStream? = null
         var uri: Uri? = null
         try {
-            val mimeType = getMimeType(compressFormat)
             val newUri = directoryUri.createFile(
                 context,
-                displayName,
-                mimeType
+                fileName
             )
             if (newUri != null) {
                 outputStream = context.contentResolver.openOutputStream(newUri)
@@ -115,28 +112,6 @@ object BitmapUtils {
             outputStream?.close()
         }
         return uri
-    }
-
-    private fun getMimeType(format: Bitmap.CompressFormat): String {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            when (format) {
-                Bitmap.CompressFormat.PNG -> "image/png"
-                Bitmap.CompressFormat.JPEG -> "image/jpeg"
-                Bitmap.CompressFormat.WEBP_LOSSY,
-                Bitmap.CompressFormat.WEBP_LOSSLESS -> "image/webp"
-
-                else -> throw IllegalArgumentException("Unknown compress format")
-            }
-
-        } else {
-            @Suppress("DEPRECATION")
-            when (format) {
-                Bitmap.CompressFormat.PNG -> "image/png"
-                Bitmap.CompressFormat.JPEG -> "image/jpeg"
-                Bitmap.CompressFormat.WEBP -> "image/webp"
-                else -> throw IllegalArgumentException("Unknown compress format")
-            }
-        }
     }
 
 }
