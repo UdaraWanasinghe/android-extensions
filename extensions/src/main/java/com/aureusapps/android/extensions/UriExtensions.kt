@@ -392,6 +392,8 @@ fun Uri.createFile(
  *
  * @param context The android context.
  * @param dirName The name of the directory to be created.
+ * @param overwrite If set to true and the directory already exists, it will be overwritten.
+ * @param onError A callback function that is invoked when an error occurs during the process. It receives an instance of [UriExtensionErrors].
  *
  * @return The Uri of the created directory or existing directory, or null if the directory could not be created.
  */
@@ -480,6 +482,31 @@ fun Uri.createDirectory(
         onError(UriExtensionErrors.EXCEPTION_OCCURRED)
     }
     return dirUri
+}
+
+/**
+ * Gets or creates a directory with the specified name within the context of the given Uri.
+ *
+ * This function is used to interact with URIs, such as accessing or creating directories within a specific context.
+ *
+ * @param context The context in which the Uri is being accessed or created.
+ * @param dirName The name of the directory to be accessed or created.
+ * @param overwrite If set to true and the directory already exists, it will be overwritten.
+ * @param onError A callback function that is invoked when an error occurs during the process. It receives an instance of [UriExtensionErrors].
+ * @return The Uri representing the accessed or created directory, or null if an error occurred.
+ */
+@Suppress("unused")
+fun Uri.getOrCreateDirectory(
+    context: Context,
+    dirName: String,
+    overwrite: Boolean = false,
+    onError: (UriExtensionErrors) -> Unit = {}
+): Uri? {
+    val existing = findFile(context, dirName)
+    if (existing != null && existing.isDirectory(context)) {
+        return existing
+    }
+    return createDirectory(context, dirName, overwrite, onError)
 }
 
 /**
