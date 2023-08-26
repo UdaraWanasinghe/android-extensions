@@ -48,12 +48,3 @@ fun Matrix.copy(matrix: Matrix = Matrix()): Matrix {
     matrix.set(this)
     return matrix
 }
-
-/**
- * Multiplies this matrix by the given matrix. M' = M * other
- */
-operator fun Matrix.times(matrix: Matrix): Matrix {
-    val m = Matrix(this)
-    m.preConcat(matrix)
-    return m
-}
