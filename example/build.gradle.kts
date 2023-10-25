@@ -11,8 +11,8 @@ plugins {
 class Props(project: Project) {
     val groupId = project.findProperty(GROUP_ID).toString()
     val artifactId = "extensions.example"
-    val versionCode = 4
-    val versionName = "1.0.3"
+    val versionCode = 5
+    val versionName = "1.0.4"
 }
 
 val props = Props(project)
