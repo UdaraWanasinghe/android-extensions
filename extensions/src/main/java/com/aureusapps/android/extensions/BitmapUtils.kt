@@ -17,34 +17,26 @@ object BitmapUtils {
      *
      * @param context The context in which the function is called.
      * @param uri The Uri of the image to be decoded.
+     * @param options An optional set of decoding options. If null, default decoding options are used.
      * This could be content provider uri, android resource uri, file uri or a http uri.
      *
      * @return The decoded Bitmap image, or null if decoding fails.
      */
     @JvmStatic
-    fun decodeUri(context: Context, uri: Uri): Bitmap? {
+    fun decodeUri(context: Context, uri: Uri, options: BitmapFactory.Options? = null): Bitmap? {
         var inputStream: InputStream? = null
         var bitmap: Bitmap? = null
 
         try {
             when (uri.scheme) {
-                ContentResolver.SCHEME_CONTENT,
-                ContentResolver.SCHEME_ANDROID_RESOURCE,
-                ContentResolver.SCHEME_FILE -> {
+                ContentResolver.SCHEME_CONTENT, ContentResolver.SCHEME_ANDROID_RESOURCE, ContentResolver.SCHEME_FILE -> {
                     inputStream = context.contentResolver.openInputStream(uri)
                 }
 
-                "http",
-                "https" -> {
-                    val request = Request.Builder()
-                        .url(uri.toString())
-                        .build()
-                    val client = OkHttpClient
-                        .Builder()
-                        .build()
-                    val response = client
-                        .newCall(request)
-                        .execute()
+                "http", "https" -> {
+                    val request = Request.Builder().url(uri.toString()).build()
+                    val client = OkHttpClient.Builder().build()
+                    val response = client.newCall(request).execute()
                     val body = response.body
                     if (body != null) {
                         if (response.code == 200) {
@@ -56,7 +48,7 @@ object BitmapUtils {
                 }
             }
             bitmap = if (inputStream != null) {
-                BitmapFactory.decodeStream(inputStream)
+                BitmapFactory.decodeStream(inputStream, null, options)
             } else {
                 null
             }
@@ -96,13 +88,13 @@ object BitmapUtils {
         var uri: Uri? = null
         try {
             val newUri = directoryUri.createFile(
-                context,
-                fileName
+                context, fileName
             )
             if (newUri != null) {
                 outputStream = context.contentResolver.openOutputStream(newUri)
-                if (outputStream != null
-                    && bitmap.compress(compressFormat, compressQuality, outputStream)
+                if (outputStream != null && bitmap.compress(
+                        compressFormat, compressQuality, outputStream
+                    )
                 ) {
                     uri = newUri
                 }
