@@ -412,6 +412,7 @@ fun Uri.createDirectory(
                     val childFile = File(parentFile, dirName)
                     val createDir = if (childFile.exists()) {
                         if (childFile.isDirectory) {
+                            dirUri = childFile.toUri()
                             false
                         } else {
                             if (overwrite) {
@@ -446,6 +447,7 @@ fun Uri.createDirectory(
                     val existing = parentDoc.findFile(dirName)
                     val createDir = if (existing != null) {
                         if (existing.isDirectory) {
+                            dirUri = existing.uri
                             false
                         } else if (overwrite) {
                             if (existing.delete()) {
