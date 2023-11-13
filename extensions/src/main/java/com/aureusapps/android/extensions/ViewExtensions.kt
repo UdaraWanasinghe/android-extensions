@@ -65,6 +65,30 @@ inline fun <reified T : ViewModel> View.viewModels(
     }
 }
 
+/**
+ * Attaches the `ViewModelStoreOwner` from the given [view]'s view tree to the current View.
+ *
+ * @param view The View from which to extract the `ViewModelStoreOwner`.
+ * @throws NullPointerException if the `ViewModelStoreOwner` cannot be found.
+ */
+private fun View.attachViewModelStoreOwnerFrom(view: View) {
+    val storeOwner = view.findViewTreeViewModelStoreOwner()
+        ?: throw NullPointerException("Failed to get view model store owner")
+    setTag(androidx.lifecycle.viewmodel.R.id.view_tree_view_model_store_owner, storeOwner)
+}
+
+/**
+ * Attaches the `LifecycleOwner` from the given [view]'s view tree to the current View.
+ *
+ * @param view The View from which to extract the `LifecycleOwner`.
+ * @throws NullPointerException if the `LifecycleOwner` cannot be found.
+ */
+private fun View.attachLifecycleOwnerFrom(view: View) {
+    val lifecycleOwner = view.findViewTreeLifecycleOwner()
+        ?: throw NullPointerException("Failed to get lifecycle owner")
+    setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, lifecycleOwner)
+}
+
 inline fun <reified T : ViewModel> View.activityViewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
@@ -398,10 +422,7 @@ fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArr
 }
 
 fun View.obtainStyledAttributes(
-    set: AttributeSet?,
-    attrs: IntArray,
-    defStyleAttr: Int = 0,
-    defStyleRes: Int = 0
+    set: AttributeSet?, attrs: IntArray, defStyleAttr: Int = 0, defStyleRes: Int = 0
 ): TypedArray {
     return context.theme.obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
 }
