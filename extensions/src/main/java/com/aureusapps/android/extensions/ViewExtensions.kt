@@ -71,7 +71,7 @@ inline fun <reified T : ViewModel> View.viewModels(
  * @param view The View from which to extract the `ViewModelStoreOwner`.
  * @throws NullPointerException if the `ViewModelStoreOwner` cannot be found.
  */
-private fun View.attachViewModelStoreOwnerFrom(view: View) {
+fun View.attachViewModelStoreOwnerFrom(view: View) {
     val storeOwner = view.findViewTreeViewModelStoreOwner()
         ?: throw NullPointerException("Failed to get view model store owner")
     setTag(androidx.lifecycle.viewmodel.R.id.view_tree_view_model_store_owner, storeOwner)
@@ -83,7 +83,7 @@ private fun View.attachViewModelStoreOwnerFrom(view: View) {
  * @param view The View from which to extract the `LifecycleOwner`.
  * @throws NullPointerException if the `LifecycleOwner` cannot be found.
  */
-private fun View.attachLifecycleOwnerFrom(view: View) {
+fun View.attachLifecycleOwnerFrom(view: View) {
     val lifecycleOwner = view.findViewTreeLifecycleOwner()
         ?: throw NullPointerException("Failed to get lifecycle owner")
     setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, lifecycleOwner)
