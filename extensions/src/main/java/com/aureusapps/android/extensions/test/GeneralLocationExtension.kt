@@ -56,21 +56,21 @@ enum class GeneralLocationExtension : CoordinatesProvider {
     protected enum class Position {
 
         BEGIN {
-            override fun getPosition(viewPos: Int, viewLength: Int): Float {
-                return viewPos.toFloat()
+            override fun getPosition(widgetPos: Int, widgetLength: Int): Float {
+                return widgetPos.toFloat()
             }
         },
 
         MIDDLE {
-            override fun getPosition(viewPos: Int, viewLength: Int): Float {
+            override fun getPosition(widgetPos: Int, widgetLength: Int): Float {
                 // Midpoint between the leftmost and rightmost pixel (position viewLength - 1).
-                return viewPos + (viewLength - 1) / 2.0f
+                return widgetPos + (widgetLength - 1) / 2.0f
             }
         },
 
         END {
-            override fun getPosition(viewPos: Int, viewLength: Int): Float {
-                return (viewPos + viewLength - 1).toFloat()
+            override fun getPosition(widgetPos: Int, widgetLength: Int): Float {
+                return (widgetPos + widgetLength - 1).toFloat()
             }
         };
 
