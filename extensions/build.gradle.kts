@@ -20,7 +20,7 @@ val props = Props(project)
 
 android {
     namespace = "${props.groupId}.${props.artifactId}"
-    compileSdk = 33
+    compileSdk = 34
     defaultConfig {
         minSdk = 21
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -39,7 +39,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
     publishing {
         singleVariant("release") {
