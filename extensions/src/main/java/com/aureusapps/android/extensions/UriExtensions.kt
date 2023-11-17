@@ -16,6 +16,7 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.internal.closeQuietly
 import java.io.File
 import java.io.InputStream
@@ -685,6 +686,7 @@ fun Uri.fileSize(context: Context): Long {
 @SuppressLint("Recycle")
 fun Uri.openInputStream(context: Context): InputStream? {
     var inputStream: InputStream? = null
+    var response: Response? = null
     try {
         when (scheme) {
             SCHEME_CONTENT,
@@ -701,7 +703,7 @@ fun Uri.openInputStream(context: Context): InputStream? {
                 val client = OkHttpClient
                     .Builder()
                     .build()
-                val response = client
+                response = client
                     .newCall(request)
                     .execute()
                 val body = response.body
@@ -710,12 +712,12 @@ fun Uri.openInputStream(context: Context): InputStream? {
                         // closing input stream will also close the response
                         inputStream = body.byteStream()
                     }
-                    // don't call close if body is null
-                    response.closeQuietly()
                 }
             }
         }
     } catch (_: Exception) {
+    } finally {
+        response?.closeQuietly()
     }
     return inputStream
 }
