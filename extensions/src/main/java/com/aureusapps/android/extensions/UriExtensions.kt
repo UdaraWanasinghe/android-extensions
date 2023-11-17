@@ -709,10 +709,9 @@ fun Uri.openInputStream(context: Context): InputStream? {
                     if (response.code == 200) {
                         // closing input stream will also close the response
                         inputStream = body.byteStream()
-                    } else {
-                        // don't call close if body is null
-                        response.closeQuietly()
                     }
+                    // don't call close if body is null
+                    response.closeQuietly()
                 }
             }
         }
