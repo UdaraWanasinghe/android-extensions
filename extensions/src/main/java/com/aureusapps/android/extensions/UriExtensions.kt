@@ -11,12 +11,12 @@ import android.provider.DocumentsContract
 import android.provider.DocumentsProvider
 import android.text.TextUtils
 import android.webkit.MimeTypeMap
+import androidx.annotation.RequiresApi
 import androidx.core.net.toFile
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
 import okhttp3.internal.closeQuietly
 import java.io.File
 import java.io.InputStream
@@ -686,7 +686,6 @@ fun Uri.fileSize(context: Context): Long {
 @SuppressLint("Recycle")
 fun Uri.openInputStream(context: Context): InputStream? {
     var inputStream: InputStream? = null
-    var response: Response? = null
     try {
         when (scheme) {
             SCHEME_CONTENT,
@@ -703,23 +702,59 @@ fun Uri.openInputStream(context: Context): InputStream? {
                 val client = OkHttpClient
                     .Builder()
                     .build()
-                response = client
+                val response = client
                     .newCall(request)
                     .execute()
                 val body = response.body
                 if (body != null) {
                     if (response.code == 200) {
                         // closing input stream will also close the response
-                        inputStream = body.byteStream()
+                        inputStream = body.byteStream().onClose { response.close() }
+                    } else {
+                        response.close()
                     }
                 }
             }
         }
     } catch (_: Exception) {
-    } finally {
-        response?.closeQuietly()
     }
     return inputStream
+}
+
+private fun InputStream.onClose(block: () -> Unit): InputStream {
+    return object : InputStream() {
+        override fun read(): Int = this@onClose.read()
+        override fun read(b: ByteArray?): Int = this@onClose.read(b)
+        override fun read(b: ByteArray?, off: Int, len: Int): Int = this@onClose.read(b, off, len)
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        override fun readAllBytes(): ByteArray = this@onClose.readAllBytes()
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        override fun readNBytes(len: Int): ByteArray = this@onClose.readNBytes(len)
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        override fun readNBytes(b: ByteArray?, off: Int, len: Int): Int =
+            this@onClose.readNBytes(b, off, len)
+
+        override fun skip(n: Long): Long = this@onClose.skip(n)
+        override fun available(): Int = this@onClose.available()
+        override fun mark(readlimit: Int) = this@onClose.mark(readlimit)
+        override fun reset() = this@onClose.reset()
+        override fun markSupported(): Boolean = this@onClose.markSupported()
+
+        @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+        override fun transferTo(out: OutputStream?): Long = this@onClose.transferTo(out)
+
+        override fun close() {
+            this@onClose.close()
+            block()
+        }
+
+        override fun equals(other: Any?): Boolean = this@onClose == other
+        override fun hashCode(): Int = this@onClose.hashCode()
+        override fun toString(): String = this@onClose.toString()
+    }
 }
 
 /**
@@ -765,7 +800,7 @@ fun Uri.copyTo(
         }
 
         else -> {
-            val input = openInputStream(context) ?: run {
+            val inputStream = openInputStream(context) ?: run {
                 onError("Given source uri is not supported.")
                 return false
             }
@@ -801,16 +836,16 @@ fun Uri.copyTo(
                 onError("Failed to create destination file.")
                 return false
             }
-            val output = dstDocument.openOutputStream(context) ?: run {
+            val outputStream = dstDocument.openOutputStream(context) ?: run {
                 onError("Failed to open destination output stream.")
                 return false
             }
             try {
                 val fileSize = this.fileSize(context)
-                return input.copyTo(output) == fileSize
+                return inputStream.copyTo(outputStream) == fileSize
             } finally {
-                input.close()
-                output.close()
+                inputStream.close()
+                outputStream.close()
             }
         }
     }
