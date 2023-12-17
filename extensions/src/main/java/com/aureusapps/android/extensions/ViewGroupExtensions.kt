@@ -2,6 +2,9 @@ package com.aureusapps.android.extensions
 
 import android.view.View
 import android.view.ViewGroup
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 
 fun ViewGroup.generateLayoutParams(): ViewGroup.LayoutParams {
     val method = ViewGroup::class.java.getDeclaredMethod("generateDefaultLayoutParams")
@@ -51,8 +54,13 @@ fun ViewGroup.generateLayoutParams(
     )
 }
 
+@OptIn(ExperimentalContracts::class)
 inline fun <T : ViewGroup> T.addView(block: (T) -> View): T {
-    addView(block(this))
+    contract {
+        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+    }
+    val view = block(this)
+    addView(view)
     return this
 }
 
