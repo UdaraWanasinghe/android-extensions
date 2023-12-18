@@ -646,6 +646,39 @@ fun Uri.findFile(context: Context, fileName: String): Uri? {
 }
 
 /**
+ * Finds a directory with the given name within the directory represented by the Uri.
+ *
+ * @param context The context in which the directory search will be performed.
+ * @param dirName The name of the directory to be found.
+ *
+ * @return The Uri of the directory if found within the context, or null if not found.
+ */
+fun Uri.findDirectory(context: Context, dirName: String): Uri? {
+    var uri: Uri? = null
+    try {
+        when (scheme) {
+            SCHEME_FILE -> {
+                uri = path
+                    ?.let { File(it) }
+                    ?.listFiles()
+                    ?.firstOrNull { it.name == dirName }
+                    ?.takeIf { it.isDirectory }
+                    ?.toUri()
+            }
+
+            SCHEME_CONTENT -> {
+                uri = DocumentFile.fromTreeUri(context, this)
+                    ?.findFile(dirName)
+                    ?.takeIf { it.isDirectory }
+                    ?.uri
+            }
+        }
+    } catch (_: Exception) {
+    }
+    return uri
+}
+
+/**
  * Returns the size of the content represented by the Uri in bytes.
  *
  * @return The size of the content in bytes, or -1 if the size cannot be determined.
