@@ -114,7 +114,7 @@ fun DocumentFile.copyTo(
                 return false
             }
         } else {
-            val mimeType = if (uri.scheme != SCHEME_FILE) {
+            val mimeType = if (targetParent.uri.scheme != SCHEME_FILE) {
                 val extension = srcName.substringAfterLast(".")
                 MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
             } else {

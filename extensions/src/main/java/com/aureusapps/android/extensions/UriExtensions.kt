@@ -87,7 +87,7 @@ fun Uri.isDocumentUri(context: Context): Boolean {
 fun Uri.queryForInt(
     context: Context,
     column: String,
-    defaultValue: Int
+    defaultValue: Int,
 ): Int {
     val projection = arrayOf(column)
     val resolver = context.contentResolver
@@ -113,7 +113,7 @@ fun Uri.queryForInt(
 fun Uri.queryForLong(
     context: Context,
     column: String,
-    defaultValue: Long
+    defaultValue: Long,
 ): Long {
     val projection = arrayOf(column)
     val resolver = context.contentResolver
@@ -140,7 +140,7 @@ fun Uri.queryForLong(
 fun Uri.queryForString(
     context: Context,
     column: String,
-    defaultValue: String
+    defaultValue: String,
 ): String {
     val projection = arrayOf(column)
     val resolver = context.contentResolver
@@ -809,79 +809,73 @@ fun Uri.copyTo(
 ): Boolean {
     val srcScheme = this.scheme
     val dstScheme = targetParent.scheme
-    when (srcScheme) {
-        SCHEME_FILE -> {
-            val srcDocument = DocumentFile.fromFile(this.toFile())
-            val parentDocument = when {
-                dstScheme == SCHEME_FILE -> {
-                    DocumentFile.fromFile(targetParent.toFile())
-                }
+    val srcDocument = when {
+        srcScheme == SCHEME_FILE -> DocumentFile.fromFile(this.toFile())
+        isTreeUri -> DocumentFile.fromTreeUri(context, this) ?: run {
+            onError("Tree uris are not supported on this android version.")
+            return false
+        }
 
-                targetParent.isTreeUri -> {
-                    DocumentFile.fromTreeUri(context, targetParent) ?: run {
-                        onError("Tree uris are not supported on this android version.")
-                        return false
-                    }
-                }
+        srcScheme == SCHEME_CONTENT -> DocumentFile.fromSingleUri(context, this) ?: run {
+            onError("Content uris are not supported on this android version.")
+            return false
+        }
 
-                else -> {
-                    onError("Unsupported destination uri.")
-                    return false
-                }
-            }
-            return srcDocument.copyTo(context, parentDocument, overwrite, onError)
+        srcScheme == SCHEME_ANDROID_RESOURCE ||
+                srcScheme == "http" ||
+                srcScheme == "https" -> null
+
+        else -> {
+            onError("Unsupported source uri.")
+            return false
+        }
+    }
+    val dstDocument = when {
+        dstScheme == SCHEME_FILE -> DocumentFile.fromFile(targetParent.toFile())
+        targetParent.isTreeUri -> DocumentFile.fromTreeUri(context, targetParent) ?: run {
+            onError("Tree uris are not supported on this android version.")
+            return false
         }
 
         else -> {
-            val inputStream = openInputStream(context) ?: run {
-                onError("Given source uri is not supported.")
-                return false
-            }
-            val parentDocument = when {
-                targetParent.isFileUri -> {
-                    val file = targetParent.toFile()
-                    DocumentFile.fromFile(file)
-                }
-
-                targetParent.isTreeUri -> {
-                    DocumentFile.fromTreeUri(context, targetParent) ?: run {
-                        onError("Current android version is not supported.")
-                        return false
-                    }
-                }
-
-                else -> {
-                    onError("Given target parent uri is not supported.")
-                    return false
-                }
-            }
-            val srcName = this.fileName(context) ?: run {
-                onError("Failed to retrieve source file name.")
-                return false
-            }
-            val extension = srcName.substringAfterLast(".")
-            val mimeType = if (targetParent.scheme != SCHEME_FILE) {
-                MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
-            } else {
-                ""
-            }
-            val dstDocument = parentDocument.createFile(mimeType, srcName) ?: run {
-                onError("Failed to create destination file.")
-                return false
-            }
-            val outputStream = dstDocument.openOutputStream(context) ?: run {
-                onError("Failed to open destination output stream.")
-                return false
-            }
-            try {
-                val fileSize = this.fileSize(context)
-                return inputStream.copyTo(outputStream) == fileSize
-            } finally {
-                inputStream.close()
-                outputStream.close()
-            }
+            onError("Unsupported destination uri.")
+            return false
         }
     }
+    if (srcDocument != null) {
+        return srcDocument.copyTo(context, dstDocument, overwrite, onError)
+    } else {
+        val inputStream = this.openInputStream(context) ?: run {
+            onError("Given source uri is not supported.")
+            return false
+        }
+        val srcName = this.fileName(context) ?: run {
+            onError("Failed to retrieve source file name.")
+            return false
+        }
+        val extension = srcName.substringAfterLast(".")
+        val mimeType = if (targetParent.scheme != SCHEME_FILE) {
+            MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: ""
+        } else {
+            ""
+        }
+        val dstFile = dstDocument.createFile(mimeType, srcName) ?: run {
+            onError("Failed to create destination file.")
+            return false
+        }
+        val outputStream = dstFile.openOutputStream(context) ?: run {
+            onError("Failed to open destination output stream.")
+            return false
+        }
+        try {
+            val fileSize = this.fileSize(context)
+            return inputStream.copyTo(outputStream) == fileSize
+        } finally {
+            inputStream.close()
+            outputStream.close()
+        }
+    }
+
 }
 
 /**
