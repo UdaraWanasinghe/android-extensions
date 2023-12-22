@@ -1,6 +1,6 @@
 package com.aureusapps.android.extensions
 
-internal object JSON {
+object JSON {
 
     fun toBoolean(value: Any): Boolean? {
         return when (value) {
