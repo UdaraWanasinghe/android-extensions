@@ -1,22 +1,13 @@
 package com.aureusapps.android.extensions
 
 import org.json.JSONArray
-import org.json.JSONObject
 
-fun <T> JSONArray.mapJSONObject(block: (JSONObject) -> T): List<T> {
-    return List(length()) {
-        block(getJSONObject(it))
-    }
-}
-
-fun <T> JSONArray.mapJSONArray(block: (JSONArray) -> T): List<T> {
-    return List(length()) {
-        block(getJSONArray(it))
-    }
-}
-
-fun <T> JSONArray.mapString(block: (String) -> T): List<T> {
-    return List(length()) {
-        block(getString(it))
-    }
-}
+/**
+ * Extension function for JSONArray to map its elements to a list of elements of type T.
+ *
+ * @param block The transformation function that takes an element from JSONArray and returns an element of type T.
+ * @return A list containing elements of type T resulting from the transformation of JSONArray's elements.
+ */
+inline fun <T> JSONArray.map(block: (element: Any) -> T): List<T> =
+    // Map through each index in the JSONArray and apply the transformation function to its elements
+    (0 until length()).map { block(get(it)) }

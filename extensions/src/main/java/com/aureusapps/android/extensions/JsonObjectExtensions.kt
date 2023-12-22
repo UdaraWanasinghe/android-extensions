@@ -1,28 +1,22 @@
 package com.aureusapps.android.extensions
 
-import org.json.JSONArray
 import org.json.JSONObject
 
-fun <T> JSONObject.mapString(block: (String, String) -> T): List<T> {
-    val list = ArrayList<T>()
-    for (key in keys()) {
-        list.add(block(key, getString(key)))
-    }
-    return list
-}
+/**
+ * Extension function for JSONObject to map its keys and values to a list of elements of type T.
+ *
+ * @param block The transformation function that takes a key-value pair and returns an element of type T.
+ * @return A list containing elements of type T resulting from the transformation of JSONObject's keys and values.
+ */
+inline fun <T> JSONObject.map(block: (key: String, value: Any) -> T): List<T> {
+    val list = mutableListOf<T>()
 
-fun <T> JSONObject.mapJSONObject(block: (String, JSONObject) -> T): List<T> {
-    val list = ArrayList<T>()
+    // Iterate through each key in the JSONObject
     for (key in keys()) {
-        list.add(block(key, getJSONObject(key)))
+        // Apply the transformation function to the key-value pair and add the result to the list
+        list.add(block(key, get(key)))
     }
-    return list
-}
 
-fun <T> JSONObject.mapJSONArray(block: (String, JSONArray) -> T): List<T> {
-    val list = ArrayList<T>()
-    for (key in keys()) {
-        list.add(block(key, getJSONArray(key)))
-    }
-    return list
+    // Convert the mutable list to an immutable list and return
+    return list.toList()
 }
