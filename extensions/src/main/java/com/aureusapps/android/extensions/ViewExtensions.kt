@@ -89,6 +89,15 @@ fun View.attachLifecycleOwnerFrom(view: View) {
     setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, lifecycleOwner)
 }
 
+/**
+ * Detaches lifecycle owner from the given [view].
+ *
+ * @param view The view from which to remove lifecycle owner from.
+ */
+fun View.detachLifecycleOwnerFrom(view: View) {
+    setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, null)
+}
+
 inline fun <reified T : ViewModel> View.activityViewModels(
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
