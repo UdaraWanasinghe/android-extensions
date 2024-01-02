@@ -42,7 +42,7 @@ class ContextBuilder(private val context: Context) {
         @StyleRes defStyleRes: Int
     ): ContextBuilder {
         val outValue = TypedValue()
-        if (!targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
+        if (defStyleRes != 0 && !targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
             // attribute is not in the context
             getOrCreateThemedContext().theme.applyStyle(defStyleRes, true)
         }
@@ -51,13 +51,13 @@ class ContextBuilder(private val context: Context) {
 
     fun applyStyle(
         @AttrRes attrRes: Int,
-        @StyleRes defStyleRes: Int,
+        @StyleRes defStyleRes: Int = 0,
         force: Boolean = false
     ): ContextBuilder {
         val outValue = TypedValue()
         if (targetContext.theme.resolveAttribute(attrRes, outValue, false)) {
             getOrCreateThemedContext().theme.applyStyle(outValue.data, force)
-        } else {
+        } else if (defStyleRes != 0) {
             getOrCreateThemedContext().theme.applyStyle(defStyleRes, force)
         }
         return this
@@ -67,7 +67,9 @@ class ContextBuilder(private val context: Context) {
         @StyleRes styleRes: Int,
         force: Boolean = false
     ): ContextBuilder {
-        getOrCreateThemedContext().theme.applyStyle(styleRes, force)
+        if (styleRes != 0) {
+            getOrCreateThemedContext().theme.applyStyle(styleRes, force)
+        }
         return this
     }
 
