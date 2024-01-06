@@ -24,12 +24,20 @@ import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.CreationExtras
 
-fun View.dismissKeyboard() {
+/**
+ * Hides the soft keyboard associated with this view.
+ * This extension function is used to hide the soft keyboard when called on a specific View.
+ */
+fun View.hideKeyboard() {
     context.getInputMethodManager().hideSoftInputFromWindow(
         windowToken, 0
     )
 }
 
+/**
+ * Shows the soft keyboard associated with this view.
+ * This extension function requests focus on the view and displays the soft keyboard.
+ */
 fun View.showKeyboard() {
     requestFocus()
     context.getInputMethodManager().showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
