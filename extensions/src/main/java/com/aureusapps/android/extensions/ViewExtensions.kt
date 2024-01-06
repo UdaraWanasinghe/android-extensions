@@ -98,11 +98,9 @@ fun View.attachLifecycleOwnerFrom(view: View) {
 }
 
 /**
- * Detaches lifecycle owner from the given [view].
- *
- * @param view The view from which to remove lifecycle owner from.
+ * Detaches lifecycle owner from the view.
  */
-fun View.detachLifecycleOwnerFrom(view: View) {
+fun View.detachLifecycleOwner() {
     setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, null)
 }
 
