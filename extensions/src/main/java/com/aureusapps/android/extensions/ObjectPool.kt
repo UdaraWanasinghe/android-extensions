@@ -1,5 +1,11 @@
 package com.aureusapps.android.extensions
 
+/**
+ * A generic object pool implementation in Kotlin.
+ *
+ * @property poolSize The maximum size of the object pool. Defaults to 10 if not specified.
+ * @property objectFactory A lambda function responsible for creating new instances of type T.
+ */
 class ObjectPool<T>(
     private val poolSize: Int = 10,
     private val objectFactory: () -> T,
