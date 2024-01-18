@@ -22,7 +22,7 @@ object CanvasUtils {
      * @param innerRadius The inner radius of the rounded corners.
      * @param paint The paint used to style the rectangle.
      */
-    fun drawRoundRect(
+    fun drawDoubleRoundRect(
         canvas: Canvas,
         left: Float,
         top: Float,
@@ -33,103 +33,35 @@ object CanvasUtils {
         paint: Paint
     ) {
         val drawPath = pathPool.acquire()
+        val innerPath = pathPool.acquire()
         val drawPaint = paintPool.acquire()
         drawPaint.set(paint)
         drawPaint.style = Paint.Style.FILL
-        drawPath.apply {
-            // outer rect
-            reset()
-            moveTo(left + outerRadius, top)
-            arcTo(
-                /* left = */ left,
-                /* top = */ top,
-                /* right = */ left + 2 * outerRadius,
-                /* bottom = */ top + 2 * outerRadius,
-                /* startAngle = */ 90f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(left, bottom - outerRadius)
-            arcTo(
-                /* left = */ left,
-                /* top = */ bottom - 2 * outerRadius,
-                /* right = */ left + 2 * outerRadius,
-                /* bottom = */ bottom,
-                /* startAngle = */ 180f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(right - outerRadius, bottom)
-            arcTo(
-                /* left = */ right - 2 * outerRadius,
-                /* top = */ bottom - 2 * outerRadius,
-                /* right = */ right,
-                /* bottom = */ bottom,
-                /* startAngle = */ 270f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(right, top + outerRadius)
-            arcTo(
-                /* left = */ right - 2 * outerRadius,
-                /* top = */ top,
-                /* right = */ right,
-                /* bottom = */ top + 2 * outerRadius,
-                /* startAngle = */ 0f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(left + outerRadius, top)
-            close()
-
-            // inner rect
-            val strokeWidth = paint.strokeWidth
-            moveTo(left + strokeWidth + innerRadius, top + strokeWidth)
-            arcTo(
-                /* left = */ left + strokeWidth,
-                /* top = */ top + strokeWidth,
-                /* right = */ left + strokeWidth + 2 * innerRadius,
-                /* bottom = */ top + strokeWidth + 2 * innerRadius,
-                /* startAngle = */ 90f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(left + strokeWidth, bottom - strokeWidth - innerRadius)
-
-            arcTo(
-                /* left = */ left + strokeWidth,
-                /* top = */ bottom - strokeWidth - 2 * innerRadius,
-                /* right = */ left + strokeWidth + 2 * innerRadius,
-                /* bottom = */ bottom - strokeWidth,
-                /* startAngle = */ 180f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(right - strokeWidth - innerRadius, bottom - strokeWidth)
-            arcTo(
-                /* left = */ right - strokeWidth - 2 * innerRadius,
-                /* top = */ bottom - strokeWidth - 2 * innerRadius,
-                /* right = */ right - strokeWidth,
-                /* bottom = */ bottom - strokeWidth,
-                /* startAngle = */ 270f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(right - strokeWidth, top + strokeWidth + innerRadius)
-            arcTo(
-                /* left = */ right - strokeWidth - 2 * innerRadius,
-                /* top = */ top + strokeWidth,
-                /* right = */ right - strokeWidth,
-                /* bottom = */ top + strokeWidth + 2 * innerRadius,
-                /* startAngle = */ 0f,
-                /* sweepAngle = */ -90f,
-                /* forceMoveTo = */ false
-            )
-            lineTo(left + strokeWidth + innerRadius, top + strokeWidth)
-            close()
-        }
+        val strokeWidth = paint.strokeWidth
+        drawPath.reset()
+        drawPath.addRoundRect(
+            left,
+            top,
+            right,
+            bottom,
+            outerRadius,
+            outerRadius,
+            Path.Direction.CW
+        )
+        innerPath.reset()
+        innerPath.addRoundRect(
+            left + strokeWidth,
+            top + strokeWidth,
+            right - strokeWidth,
+            bottom - strokeWidth,
+            innerRadius,
+            innerRadius,
+            Path.Direction.CW
+        )
+        drawPath.op(innerPath, Path.Op.DIFFERENCE)
         canvas.drawPath(drawPath, drawPaint)
         pathPool.release(drawPath)
+        pathPool.release(innerPath)
         paintPool.release(drawPaint)
     }
 
