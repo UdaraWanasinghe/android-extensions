@@ -18,9 +18,9 @@ import kotlin.experimental.ExperimentalTypeInference
  * will produce `[[], [1], [1, 3]]`.
  */
 @OptIn(ExperimentalTypeInference::class)
-fun <T, R> Flow<T>.scanNotNull(
+inline fun <T, R> Flow<T>.scanNotNull(
     initial: R,
-    @BuilderInference operation: suspend (accumulator: R, value: T) -> R?
+    @BuilderInference crossinline operation: suspend (accumulator: R, value: T) -> R?
 ): Flow<R> = flow {
     var accumulator: R = initial
     emit(initial)
@@ -41,9 +41,9 @@ fun <T, R> Flow<T>.scanNotNull(
  * will produce `[0, 0, 1, 1, 3, 3, 6]`
  */
 @OptIn(ExperimentalTypeInference::class)
-fun <T, R> Flow<T>.scanTransform(
+inline fun <T, R> Flow<T>.scanTransform(
     initial: R,
-    @BuilderInference operation: suspend FlowCollector<R>.(accumulator: R, value: T) -> Unit
+    @BuilderInference crossinline operation: suspend FlowCollector<R>.(accumulator: R, value: T) -> Unit
 ): Flow<R> = flow {
     var accumulator: R = initial
     emit(initial)
@@ -53,5 +53,24 @@ fun <T, R> Flow<T>.scanTransform(
     }
     collect { value ->
         operation(collector, accumulator, value)
+    }
+}
+
+/**
+ * Performs the specified [block] action only on the first element emitted by the original [Flow].
+ * Subsequent elements are emitted without any modification.
+ *
+ * @param block The action to be executed on the first emitted element.
+ * @return A new [Flow] where the specified action is applied only to the first emitted element.
+ */
+inline fun <T> Flow<T>.onFirst(crossinline block: suspend (T) -> Unit): Flow<T> = flow {
+    var first = true
+    collect { value ->
+        if (first) {
+            first = false
+            block(value)
+        } else {
+            emit(value)
+        }
     }
 }

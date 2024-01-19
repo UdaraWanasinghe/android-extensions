@@ -26,4 +26,20 @@ class FlowExtensionsUnitTest {
         assertEquals(listOf(0, 0, 1, 1, 3, 3, 6), result)
     }
 
+    @Test
+    fun testOnFirst() = runTest {
+        val flow = flowOf(1, 2, 3)
+        val first = mutableListOf<Int>()
+        val second = mutableListOf<Int>()
+        flow
+            .onFirst {
+                first.add(it)
+            }
+            .collect {
+                second.add(it)
+            }
+        assertEquals(listOf(1), first)
+        assertEquals(listOf(2, 3), second)
+    }
+
 }
