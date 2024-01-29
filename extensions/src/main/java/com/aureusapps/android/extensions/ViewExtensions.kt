@@ -16,6 +16,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -520,4 +521,19 @@ fun View.findFragment(): Fragment? {
         return parent.findFragment()
     }
     return null
+}
+
+/**
+ * Finds and returns the nearest [FragmentManager] associated with the view.
+ *
+ * This finds the fragment manager associated with the view or the activity fragment
+ * manager if the view is not associated with a fragment.
+ *
+ * @return The [FragmentManager] associated with the view, or null if not found.
+ *
+ * @see [FragmentManager.findFragment]
+ * @see [fragmentManager]
+ */
+fun View.findFragmentManager(): FragmentManager? {
+    return findFragment()?.childFragmentManager ?: context.fragmentManager
 }

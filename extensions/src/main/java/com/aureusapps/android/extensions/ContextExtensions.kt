@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.google.android.material.R
 import kotlin.math.roundToInt
 
+@Suppress("RecursivePropertyAccessor")
 val Context.fragmentManager: FragmentManager?
     get() = when (this) {
         is AppCompatActivity -> supportFragmentManager
@@ -109,6 +110,7 @@ inline fun <reified T : ViewModel> Context.viewModels(
     return activity.viewModels(extrasProducer, factoryProducer)
 }
 
+@Suppress("RecursivePropertyAccessor")
 val Context.activity: Activity?
     get() = when (this) {
         is Activity -> this
@@ -116,6 +118,7 @@ val Context.activity: Activity?
         else -> null
     }
 
+@Suppress("RecursivePropertyAccessor")
 val Context.fragmentActivity: FragmentActivity?
     get() = when (this) {
         is FragmentActivity -> this
@@ -123,6 +126,7 @@ val Context.fragmentActivity: FragmentActivity?
         else -> null
     }
 
+@Suppress("RecursivePropertyAccessor")
 val Context.appCompatActivity: AppCompatActivity?
     get() = when (this) {
         is AppCompatActivity -> this
@@ -130,6 +134,7 @@ val Context.appCompatActivity: AppCompatActivity?
         else -> null
     }
 
+@Suppress("RecursivePropertyAccessor")
 val Context.componentActivity: ComponentActivity?
     get() = when (this) {
         is ComponentActivity -> this
