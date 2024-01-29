@@ -3,19 +3,19 @@ package com.aureusapps.android.extensions
 import android.content.ContentResolver.SCHEME_FILE
 import android.content.Context
 import android.webkit.MimeTypeMap
-import androidx.documentfile.provider.DocumentFile
+import com.aureusapps.android.providerfile.ProviderFile
 import java.io.InputStream
 import java.io.OutputStream
 
 /**
- * Performs a bottom-up traversal of the file hierarchy rooted at the current [DocumentFile] instance,
+ * Performs a bottom-up traversal of the file hierarchy rooted at the current [ProviderFile] instance,
  * invoking the specified [action] on each file.
  *
  * @param action the action to be performed on each visited file. The file itself is passed as a parameter to the action. Return true from the action if want to continue the traversal.
  *
  * @return true if traversal completed successfully, otherwise false.
  */
-fun DocumentFile.walkBottomUp(action: (DocumentFile) -> Boolean): Boolean {
+fun ProviderFile.walkBottomUp(action: (ProviderFile) -> Boolean): Boolean {
     if (isDirectory) {
         val files = listFiles()
         for (file in files) {
@@ -28,14 +28,14 @@ fun DocumentFile.walkBottomUp(action: (DocumentFile) -> Boolean): Boolean {
 }
 
 /**
- * Performs a top-down traversal of the file hierarchy rooted at the current [DocumentFile] instance,
+ * Performs a top-down traversal of the file hierarchy rooted at the current [ProviderFile] instance,
  * invoking the specified [action] on each file.
  *
  * @param action the action to be performed on each visited file. The file itself is passed as a parameter to the action. Return true from the action if want to continue the traversal.
  *
  * @return true if traversal completed successfully, otherwise false.
  */
-fun DocumentFile.walkTopDown(action: (DocumentFile) -> Boolean): Boolean {
+fun ProviderFile.walkTopDown(action: (ProviderFile) -> Boolean): Boolean {
     val files = mutableListOf(this)
     while (files.isNotEmpty()) {
         val file = files.removeFirst()
@@ -48,39 +48,39 @@ fun DocumentFile.walkTopDown(action: (DocumentFile) -> Boolean): Boolean {
 }
 
 /**
- * Opens an input stream to read from the DocumentFile using the provided context.
+ * Opens an input stream to read from the ProviderFile using the provided context.
  *
  * @param context The context used to access the content resolver.
- * @return An InputStream to read from the DocumentFile, or null if an error occurs.
+ * @return An InputStream to read from the ProviderFile, or null if an error occurs.
  */
-fun DocumentFile.openInputStream(context: Context): InputStream? {
+fun ProviderFile.openInputStream(context: Context): InputStream? {
     return context.contentResolver.openInputStream(uri)
 }
 
 /**
- * Opens an output stream to write to the DocumentFile using the provided context.
+ * Opens an output stream to write to the ProviderFile using the provided context.
  *
  * @param context The context used to access the content resolver.
- * @return An OutputStream to write to the DocumentFile, or null if an error occurs.
+ * @return An OutputStream to write to the ProviderFile, or null if an error occurs.
  */
-fun DocumentFile.openOutputStream(context: Context): OutputStream? {
+fun ProviderFile.openOutputStream(context: Context): OutputStream? {
     return context.contentResolver.openOutputStream(uri)
 }
 
 /**
- * Copies the current DocumentFile to a target parent DocumentFile.
+ * Copies the current ProviderFile to a target parent ProviderFile.
  *
  * @param context The android context.
- * @param targetParent The parent DocumentFile to which the current DocumentFile should be copied.
+ * @param targetParent The parent ProviderFile to which the current ProviderFile should be copied.
  * @param overwrite Determines whether to overwrite the target file if it already exists. Default is false.
  * @param onError A lambda function that handles errors during the copy operation.
  *                It takes an error message as input and returns a boolean indicating whether
  *                the operation should be terminated (true) or continued (false). Default is to terminate.
  * @return true if the copy operation is successful, false otherwise.
  */
-fun DocumentFile.copyTo(
+fun ProviderFile.copyTo(
     context: Context,
-    targetParent: DocumentFile,
+    targetParent: ProviderFile,
     overwrite: Boolean = false,
     onError: (String) -> Boolean = { true }
 ): Boolean {

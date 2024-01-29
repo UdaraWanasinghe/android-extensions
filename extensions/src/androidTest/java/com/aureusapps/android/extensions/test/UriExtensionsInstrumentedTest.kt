@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
@@ -271,6 +272,44 @@ class UriExtensionsInstrumentedTest {
             assertTrue(exists)
         } finally {
             tmpDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun checkExists_contentUri() {
+        val fileName = genRandomName(extension = "txt")
+        val childUri = createContentProviderFile(fileName = fileName)
+        try {
+            // check tree uri
+            var exists = childUri.exists(context)
+            assertTrue(exists)
+            // check media uri
+            val mediaUri = getMediaUri(fileName)
+            exists = mediaUri.exists(context)
+            assertTrue(exists)
+        } finally {
+            deleteContentProviderFile(childUri)
+        }
+    }
+
+    private fun getMediaUri(fileName: String): Uri {
+        val mediaUri = MediaStore.Files.getContentUri("external")
+        val cursor = context.contentResolver.query(
+            mediaUri,
+            arrayOf(MediaStore.Files.FileColumns._ID),
+            "${MediaStore.Files.FileColumns.DISPLAY_NAME}=?",
+            arrayOf(fileName),
+            null
+        ) ?: throw AssertionError("Content provider returned null or crashed")
+        cursor.use { csr ->
+            if (csr.count > 0) {
+                csr.moveToFirst()
+                val idColumnIndex = csr.getColumnIndex(MediaStore.Files.FileColumns._ID)
+                val id = csr.getLong(idColumnIndex)
+                return MediaStore.Files.getContentUri("external", id)
+            } else {
+                throw AssertionError("File with name: $fileName not found")
+            }
         }
     }
 

@@ -2,7 +2,6 @@ package com.aureusapps.android.extensions.test
 
 import android.content.Context
 import android.os.Build
-import androidx.documentfile.provider.DocumentFile
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.copyTo
@@ -11,6 +10,7 @@ import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
 import com.aureusapps.android.extensions.walkBottomUp
 import com.aureusapps.android.extensions.walkTopDown
+import com.aureusapps.android.providerfile.ProviderFile
 import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -20,7 +20,7 @@ import java.nio.file.Files
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
-class DocumentFileExtensionsInstrumentedTest {
+class ProviderFileExtensionsInstrumentedTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -49,7 +49,7 @@ class DocumentFileExtensionsInstrumentedTest {
                 FileNode("3")
             )
         )
-        val document = DocumentFile.fromFile(root)
+        val document = ProviderFile.fromFile(root)
         // top-down
         val topDownList = mutableListOf<String>()
         document.walkTopDown {
@@ -82,8 +82,8 @@ class DocumentFileExtensionsInstrumentedTest {
         targetParent.mkdirs()
         val files = generateTempFiles(targetParent)
         try {
-            val srcDocumentFile = DocumentFile.fromFile(files.first().first)
-            val targetDocumentFile = DocumentFile.fromFile(targetParent)
+            val srcDocumentFile = ProviderFile.fromFile(files.first().first)
+            val targetDocumentFile = ProviderFile.fromFile(targetParent)
             val copyResult = srcDocumentFile.copyTo(context, targetDocumentFile)
             assertTrue(copyResult)
             for (file in files) {

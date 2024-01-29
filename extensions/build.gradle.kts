@@ -41,6 +41,9 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
+    buildFeatures {
+        buildConfig = true
+    }
     publishing {
         singleVariant("release") {
             withSourcesJar()
@@ -73,7 +76,7 @@ dependencies {
     kapt(libs.room.compiler)
     implementation(libs.okhttp)
     implementation(libs.activity.ktx)
-    implementation(libs.documentfile)
+    implementation(libs.aureusapps.providerfile)
     implementation(libs.espresso.core)
     implementation(libs.kotlinx.coroutines.android)
 

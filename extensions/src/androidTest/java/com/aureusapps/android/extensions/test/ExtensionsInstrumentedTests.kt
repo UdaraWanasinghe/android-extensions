@@ -10,7 +10,7 @@ import org.junit.runners.Suite
     InputStreamExtensionsInstrumentedTest::class,
     AttributeSetExtensionsInstrumentedTest::class,
     UriExtensionsInstrumentedTest::class,
-    DocumentFileExtensionsInstrumentedTest::class,
+    ProviderFileExtensionsInstrumentedTest::class,
     CryptoUtilsInstrumentedTest::class,
     MatrixExtensionsInstrumentedTest::class
 )

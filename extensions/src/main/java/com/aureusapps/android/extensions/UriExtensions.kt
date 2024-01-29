@@ -5,6 +5,7 @@ import android.content.ContentResolver.SCHEME_ANDROID_RESOURCE
 import android.content.ContentResolver.SCHEME_CONTENT
 import android.content.ContentResolver.SCHEME_FILE
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.DocumentsContract
@@ -14,7 +15,7 @@ import android.webkit.MimeTypeMap
 import androidx.annotation.RequiresApi
 import androidx.core.net.toFile
 import androidx.core.net.toUri
-import androidx.documentfile.provider.DocumentFile
+import com.aureusapps.android.providerfile.ProviderFile
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.internal.closeQuietly
@@ -76,6 +77,44 @@ fun Uri.isDocumentUri(context: Context): Boolean {
 }
 
 /**
+ * Returns true if the uri is a file uri, otherwise false.
+ */
+val Uri.isFileUri: Boolean
+    get() = scheme == SCHEME_FILE
+
+/**
+ * Retrieves a value from the specified column in the content Uri using a cursor.
+ *
+ * @param context The context of the application or activity.
+ * @param column The name of the column from which to retrieve the value.
+ * @param defaultValue The default value to return if the specified column is not found or if the cursor is empty.
+ * @param block A lambda function that takes a Cursor as its argument and returns the value of the specified column.
+ *
+ * @return The value retrieved from the specified column in the content URI.
+ */
+inline fun <T> Uri.queryForValue(
+    context: Context,
+    column: String,
+    defaultValue: T,
+    block: (Cursor) -> T
+): T {
+    val resolver = context.contentResolver
+    var cursor: Cursor? = null
+    return try {
+        cursor = resolver.query(this, arrayOf(column), null, null, null)
+        if (cursor != null && cursor.moveToFirst()) {
+            block(cursor)
+        } else {
+            defaultValue
+        }
+    } catch (e: Exception) {
+        defaultValue
+    } finally {
+        cursor?.closeQuietly()
+    }
+}
+
+/**
  * Queries the content represented by the Uri for an integer value from the specified column.
  *
  * @param context The context used to access the content resolver.
@@ -83,24 +122,13 @@ fun Uri.isDocumentUri(context: Context): Boolean {
  * @param defaultValue The default value to return if the query does not yield a valid result.
  * @return The integer value from the specified column, or the defaultValue if not found or invalid.
  */
+@SuppressLint("Recycle")
 @Suppress("unused")
 fun Uri.queryForInt(
     context: Context,
     column: String,
     defaultValue: Int,
-): Int {
-    val projection = arrayOf(column)
-    val resolver = context.contentResolver
-    resolver.query(this, projection, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val columnIndex = cursor.getColumnIndex(column)
-            if (columnIndex != -1) {
-                return cursor.getInt(columnIndex)
-            }
-        }
-    }
-    return defaultValue
-}
+): Int = queryForValue(context, column, defaultValue) { it.getInt(0) }
 
 /**
  * Queries the content represented by the Uri for a long value from the specified column.
@@ -114,19 +142,7 @@ fun Uri.queryForLong(
     context: Context,
     column: String,
     defaultValue: Long,
-): Long {
-    val projection = arrayOf(column)
-    val resolver = context.contentResolver
-    resolver.query(this, projection, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val columnIndex = cursor.getColumnIndex(column)
-            if (columnIndex != -1) {
-                return cursor.getLong(columnIndex)
-            }
-        }
-    }
-    return defaultValue
-}
+): Long = queryForValue(context, column, defaultValue) { it.getLong(0) }
 
 /**
  * Queries the content represented by the Uri for a string value from the specified column.
@@ -141,25 +157,7 @@ fun Uri.queryForString(
     context: Context,
     column: String,
     defaultValue: String,
-): String {
-    val projection = arrayOf(column)
-    val resolver = context.contentResolver
-    resolver.query(this, projection, null, null, null)?.use { cursor ->
-        if (cursor.moveToFirst()) {
-            val columnIndex = cursor.getColumnIndex(column)
-            if (columnIndex != -1) {
-                return cursor.getString(columnIndex)
-            }
-        }
-    }
-    return defaultValue
-}
-
-/**
- * Returns true if the uri is a file uri, otherwise false.
- */
-val Uri.isFileUri: Boolean
-    get() = scheme == SCHEME_FILE
+): String = queryForValue(context, column, defaultValue) { it.getString(0) }
 
 /**
  * Retrieves the file name of the content represented by the Uri.
@@ -172,8 +170,9 @@ fun Uri.fileName(context: Context): String? {
     var fileName: String? = null
     try {
         when (scheme) {
-            SCHEME_CONTENT -> {
-                fileName = DocumentFile.fromSingleUri(context, this)?.name
+            SCHEME_CONTENT,
+            SCHEME_FILE -> {
+                fileName = ProviderFile.fromUri(context, this)?.name
             }
 
             SCHEME_ANDROID_RESOURCE -> {
@@ -189,10 +188,6 @@ fun Uri.fileName(context: Context): String? {
                         fileName = lastSegment
                     }
                 }
-            }
-
-            SCHEME_FILE -> {
-                fileName = lastPathSegment
             }
 
             "https",
@@ -226,13 +221,13 @@ fun Uri.isDirectory(context: Context): Boolean {
             SCHEME_CONTENT -> {
                 when {
                     isTreeUri -> {
-                        result = DocumentFile
+                        result = ProviderFile
                             .fromTreeUri(context, this)
                             ?.isDirectory ?: false
                     }
 
                     isDocumentUri(context) -> {
-                        result = DocumentFile
+                        result = ProviderFile
                             .fromSingleUri(context, this)
                             ?.isDirectory ?: false
                     }
@@ -265,7 +260,7 @@ fun Uri.listFiles(context: Context): List<Uri>? {
             }
 
             SCHEME_CONTENT -> {
-                uriList = DocumentFile.fromTreeUri(context, this)
+                uriList = ProviderFile.fromTreeUri(context, this)
                     ?.listFiles()
                     ?.map { it.uri }
             }
@@ -342,7 +337,7 @@ fun Uri.createFile(
             }
 
             SCHEME_CONTENT -> {
-                val parentDoc = DocumentFile.fromTreeUri(context, this)
+                val parentDoc = ProviderFile.fromTreeUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(fileName)
                     val createFile = if (existing != null) {
@@ -443,7 +438,7 @@ fun Uri.createDirectory(
             }
 
             SCHEME_CONTENT -> {
-                val parentDoc = DocumentFile.fromTreeUri(context, this)
+                val parentDoc = ProviderFile.fromTreeUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(dirName)
                     val createDir = if (existing != null) {
@@ -531,15 +526,9 @@ fun Uri.exists(context: Context): Boolean {
             }
 
             SCHEME_CONTENT -> {
-                exists = if (isTreeUri) {
-                    DocumentFile
-                        .fromTreeUri(context, this)
-                        ?.exists() ?: false
-                } else {
-                    DocumentFile
-                        .fromSingleUri(context, this)
-                        ?.exists() ?: false
-                }
+                exists = ProviderFile
+                    .fromUri(context, this)
+                    ?.exists() ?: false
             }
 
             SCHEME_ANDROID_RESOURCE -> {
@@ -597,13 +586,13 @@ fun Uri.delete(context: Context): Boolean {
             }
 
             SCHEME_CONTENT == scheme -> {
-                deleted = DocumentFile
+                deleted = ProviderFile
                     .fromSingleUri(context, this)
                     ?.delete() ?: false
             }
 
             isTreeUri -> {
-                deleted = DocumentFile
+                deleted = ProviderFile
                     .fromTreeUri(context, this)
                     ?.delete() ?: false
             }
@@ -635,7 +624,7 @@ fun Uri.findFile(context: Context, fileName: String): Uri? {
             }
 
             SCHEME_CONTENT -> {
-                uri = DocumentFile.fromTreeUri(context, this)
+                uri = ProviderFile.fromTreeUri(context, this)
                     ?.findFile(fileName)
                     ?.uri
             }
@@ -667,7 +656,7 @@ fun Uri.findDirectory(context: Context, dirName: String): Uri? {
             }
 
             SCHEME_CONTENT -> {
-                uri = DocumentFile.fromTreeUri(context, this)
+                uri = ProviderFile.fromTreeUri(context, this)
                     ?.findFile(dirName)
                     ?.takeIf { it.isDirectory }
                     ?.uri
@@ -685,7 +674,7 @@ fun Uri.findDirectory(context: Context, dirName: String): Uri? {
  */
 fun Uri.fileSize(context: Context): Long {
     return when (scheme) {
-        SCHEME_FILE -> DocumentFile.fromFile(toFile()).length()
+        SCHEME_FILE -> ProviderFile.fromFile(toFile()).length()
         SCHEME_CONTENT -> queryForLong(context, DocumentsContract.Document.COLUMN_SIZE, 0)
         SCHEME_ANDROID_RESOURCE -> context
             .contentResolver
@@ -810,13 +799,13 @@ fun Uri.copyTo(
     val srcScheme = this.scheme
     val dstScheme = targetParent.scheme
     val srcDocument = when {
-        srcScheme == SCHEME_FILE -> DocumentFile.fromFile(this.toFile())
-        isTreeUri -> DocumentFile.fromTreeUri(context, this) ?: run {
+        srcScheme == SCHEME_FILE -> ProviderFile.fromFile(this.toFile())
+        isTreeUri -> ProviderFile.fromTreeUri(context, this) ?: run {
             onError("Tree uris are not supported on this android version.")
             return false
         }
 
-        srcScheme == SCHEME_CONTENT -> DocumentFile.fromSingleUri(context, this) ?: run {
+        srcScheme == SCHEME_CONTENT -> ProviderFile.fromSingleUri(context, this) ?: run {
             onError("Content uris are not supported on this android version.")
             return false
         }
@@ -831,8 +820,8 @@ fun Uri.copyTo(
         }
     }
     val dstDocument = when {
-        dstScheme == SCHEME_FILE -> DocumentFile.fromFile(targetParent.toFile())
-        targetParent.isTreeUri -> DocumentFile.fromTreeUri(context, targetParent) ?: run {
+        dstScheme == SCHEME_FILE -> ProviderFile.fromFile(targetParent.toFile())
+        targetParent.isTreeUri -> ProviderFile.fromTreeUri(context, targetParent) ?: run {
             onError("Tree uris are not supported on this android version.")
             return false
         }
