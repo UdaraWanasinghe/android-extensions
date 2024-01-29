@@ -219,19 +219,9 @@ fun Uri.isDirectory(context: Context): Boolean {
             }
 
             SCHEME_CONTENT -> {
-                when {
-                    isTreeUri -> {
-                        result = ProviderFile
-                            .fromTreeUri(context, this)
-                            ?.isDirectory ?: false
-                    }
-
-                    isDocumentUri(context) -> {
-                        result = ProviderFile
-                            .fromSingleUri(context, this)
-                            ?.isDirectory ?: false
-                    }
-                }
+                result = ProviderFile
+                    .fromUri(context, this)
+                    ?.isDirectory ?: false
             }
         }
     } catch (_: Exception) {
@@ -260,7 +250,7 @@ fun Uri.listFiles(context: Context): List<Uri>? {
             }
 
             SCHEME_CONTENT -> {
-                uriList = ProviderFile.fromTreeUri(context, this)
+                uriList = ProviderFile.fromUri(context, this)
                     ?.listFiles()
                     ?.map { it.uri }
             }
@@ -337,7 +327,7 @@ fun Uri.createFile(
             }
 
             SCHEME_CONTENT -> {
-                val parentDoc = ProviderFile.fromTreeUri(context, this)
+                val parentDoc = ProviderFile.fromUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(fileName)
                     val createFile = if (existing != null) {
@@ -438,7 +428,7 @@ fun Uri.createDirectory(
             }
 
             SCHEME_CONTENT -> {
-                val parentDoc = ProviderFile.fromTreeUri(context, this)
+                val parentDoc = ProviderFile.fromUri(context, this)
                 if (parentDoc != null && parentDoc.exists()) {
                     val existing = parentDoc.findFile(dirName)
                     val createDir = if (existing != null) {
@@ -578,22 +568,16 @@ fun Uri.exists(context: Context): Boolean {
 fun Uri.delete(context: Context): Boolean {
     var deleted = false
     try {
-        when {
-            SCHEME_FILE == scheme -> {
+        when (scheme) {
+            SCHEME_FILE -> {
                 deleted = path
                     ?.let { File(it) }
                     ?.deleteRecursively() ?: false
             }
 
-            SCHEME_CONTENT == scheme -> {
+            SCHEME_CONTENT -> {
                 deleted = ProviderFile
-                    .fromSingleUri(context, this)
-                    ?.delete() ?: false
-            }
-
-            isTreeUri -> {
-                deleted = ProviderFile
-                    .fromTreeUri(context, this)
+                    .fromUri(context, this)
                     ?.delete() ?: false
             }
         }
@@ -624,7 +608,7 @@ fun Uri.findFile(context: Context, fileName: String): Uri? {
             }
 
             SCHEME_CONTENT -> {
-                uri = ProviderFile.fromTreeUri(context, this)
+                uri = ProviderFile.fromUri(context, this)
                     ?.findFile(fileName)
                     ?.uri
             }
@@ -656,7 +640,7 @@ fun Uri.findDirectory(context: Context, dirName: String): Uri? {
             }
 
             SCHEME_CONTENT -> {
-                uri = ProviderFile.fromTreeUri(context, this)
+                uri = ProviderFile.fromUri(context, this)
                     ?.findFile(dirName)
                     ?.takeIf { it.isDirectory }
                     ?.uri
@@ -670,12 +654,13 @@ fun Uri.findDirectory(context: Context, dirName: String): Uri? {
 /**
  * Returns the size of the content represented by the Uri in bytes.
  *
- * @return The size of the content in bytes, or -1 if the size cannot be determined.
+ * @return The size of the content in bytes, or 0 if the size cannot be determined.
  */
 fun Uri.fileSize(context: Context): Long {
     return when (scheme) {
-        SCHEME_FILE -> ProviderFile.fromFile(toFile()).length()
-        SCHEME_CONTENT -> queryForLong(context, DocumentsContract.Document.COLUMN_SIZE, 0)
+        SCHEME_FILE,
+        SCHEME_CONTENT -> ProviderFile.fromUri(context, this)?.length() ?: 0
+
         SCHEME_ANDROID_RESOURCE -> context
             .contentResolver
             .openAssetFileDescriptor(this, "r")
@@ -694,7 +679,7 @@ fun Uri.fileSize(context: Context): Long {
             len
         }
 
-        else -> -1
+        else -> 0
     }
 }
 
@@ -798,42 +783,32 @@ fun Uri.copyTo(
 ): Boolean {
     val srcScheme = this.scheme
     val dstScheme = targetParent.scheme
-    val srcDocument = when {
-        srcScheme == SCHEME_FILE -> ProviderFile.fromFile(this.toFile())
-        isTreeUri -> ProviderFile.fromTreeUri(context, this) ?: run {
-            onError("Tree uris are not supported on this android version.")
-            return false
-        }
+    val srcDocument = when (srcScheme) {
+        SCHEME_FILE,
+        SCHEME_CONTENT -> ProviderFile.fromUri(context, this)
 
-        srcScheme == SCHEME_CONTENT -> ProviderFile.fromSingleUri(context, this) ?: run {
-            onError("Content uris are not supported on this android version.")
-            return false
-        }
-
-        srcScheme == SCHEME_ANDROID_RESOURCE ||
-                srcScheme == "http" ||
-                srcScheme == "https" -> null
+        SCHEME_ANDROID_RESOURCE,
+        "http",
+        "https" -> null
 
         else -> {
             onError("Unsupported source uri.")
             return false
         }
     }
-    val dstDocument = when {
-        dstScheme == SCHEME_FILE -> ProviderFile.fromFile(targetParent.toFile())
-        targetParent.isTreeUri -> ProviderFile.fromTreeUri(context, targetParent) ?: run {
-            onError("Tree uris are not supported on this android version.")
-            return false
-        }
+    val dstDocument = when (dstScheme) {
+        SCHEME_FILE,
+        SCHEME_CONTENT -> ProviderFile.fromUri(context, targetParent)
 
         else -> {
             onError("Unsupported destination uri.")
             return false
         }
     }
-    if (srcDocument != null) {
+    if (srcDocument != null && dstDocument != null) {
         return srcDocument.copyTo(context, dstDocument, overwrite, onError)
     } else {
+        // open source input stream
         val inputStream = this.openInputStream(context) ?: run {
             onError("Given source uri is not supported.")
             return false
@@ -848,7 +823,8 @@ fun Uri.copyTo(
         } else {
             ""
         }
-        val dstFile = dstDocument.createFile(mimeType, srcName) ?: run {
+        // create destination file
+        val dstFile = dstDocument?.createFile(mimeType, srcName) ?: run {
             onError("Failed to create destination file.")
             return false
         }
