@@ -15,10 +15,13 @@ import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.core.content.res.ResourcesCompat
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelLazy
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.lifecycle.findViewTreeViewModelStoreOwner
 import androidx.lifecycle.lifecycleScope
@@ -43,34 +46,70 @@ fun View.showKeyboard() {
     context.getInputMethodManager().showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
 }
 
+/**
+ * Measures the minimum size of the current View.
+ *
+ * This function internally measures the View with an unspecified size constraint to determine
+ * its minimum width and height, and returns the measured dimensions as a Pair<Int, Int>,
+ * where the first value represents the minimum width and the second value represents the minimum height.
+ *
+ * @return A Pair<Int, Int> representing the minimum width and height of the View.
+ */
 fun View.minimumSize(): Pair<Int, Int> {
     val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
     measure(measureSpec, measureSpec)
     return measuredWidth to measuredHeight
 }
 
+/**
+ * Traverses view tree and retrieves a ViewModel of type [T].
+ *
+ * @param storeProducer A function that produces a custom [ViewModelStore] for the ViewModel.
+ *                      If not provided, it will traverse the view tree to find nearest view model store owner.
+ * @param extrasProducer A function that produces custom [CreationExtras] for the ViewModel.
+ *                       If not provided, it will traverse the view tree to find nearest view model provider factory
+ *                       to retrieve default extras.
+ * @param factoryProducer A function that produces a custom [ViewModelProvider.Factory] for the ViewModel.
+ *                        If not provided, it will traverse the view tree to find nearest view model provider factory
+ *                        to retrieve default factory.
+ * @return A lazy delegate to access the ViewModel of type [T] in the view tree.
+ */
 inline fun <reified T : ViewModel> View.viewModels(
+    noinline storeProducer: (() -> ViewModelStore)? = null,
     noinline extrasProducer: (() -> CreationExtras)? = null,
     noinline factoryProducer: (() -> ViewModelProvider.Factory)? = null
-): Lazy<T> = lazy {
-    val storeOwner = findViewTreeViewModelStoreOwner() ?: throw IllegalStateException(
-        "View $this does not has a ViewModelStoreOwner set"
-    )
-    val factory = factoryProducer?.invoke()
-    val extras = extrasProducer?.invoke()
-    return@lazy when {
-        factory != null && extras != null -> {
-            ViewModelProvider(storeOwner.viewModelStore, factory, extras)[T::class.java]
-        }
-
-        factory != null -> {
-            ViewModelProvider(storeOwner, factory)[T::class.java]
-        }
-
-        else -> {
-            ViewModelProvider(storeOwner)[T::class.java]
-        }
+): Lazy<T> {
+    val storePromise = storeProducer ?: {
+        val storeOwner = findViewTreeViewModelStoreOwner()
+            ?: throw IllegalArgumentException("ViewModelStoreOwner is not found in the view tree")
+        storeOwner.viewModelStore
     }
+    val providerFactoryProducer by lazy {
+        findViewTreeViewModelProviderFactory()
+            ?: throw IllegalArgumentException("View model provider factory not found in the view tree")
+    }
+    val factoryPromise = factoryProducer ?: {
+        providerFactoryProducer.defaultViewModelProviderFactory
+    }
+    val extrasPromise = extrasProducer ?: {
+        providerFactoryProducer.defaultViewModelCreationExtras
+    }
+    return ViewModelLazy(T::class, storePromise, factoryPromise, extrasPromise)
+}
+
+/**
+ * Traverses up the view hierarchy until it finds a view that holds a tag
+ * with key [androidx.lifecycle.viewmodel.R.id.view_tree_view_model_store_owner] that implements
+ * [HasDefaultViewModelProviderFactory]
+ *
+ * @return The [HasDefaultViewModelProviderFactory] associated with the view's view tree, or null if not found.
+ */
+fun View.findViewTreeViewModelProviderFactory(): HasDefaultViewModelProviderFactory? {
+    return generateSequence(this) { view ->
+        view.parent as? View
+    }.mapNotNull { view ->
+        view.getTag(androidx.lifecycle.viewmodel.R.id.view_tree_view_model_store_owner) as? HasDefaultViewModelProviderFactory
+    }.firstOrNull()
 }
 
 /**
@@ -80,8 +119,7 @@ inline fun <reified T : ViewModel> View.viewModels(
  * @throws NullPointerException if the `ViewModelStoreOwner` cannot be found.
  */
 fun View.attachViewModelStoreOwnerFrom(view: View) {
-    val storeOwner = view.findViewTreeViewModelStoreOwner()
-        ?: throw NullPointerException("Failed to get view model store owner")
+    val storeOwner = view.findViewTreeViewModelStoreOwner() ?: throw NullPointerException("Failed to get view model store owner")
     setTag(androidx.lifecycle.viewmodel.R.id.view_tree_view_model_store_owner, storeOwner)
 }
 
@@ -92,8 +130,7 @@ fun View.attachViewModelStoreOwnerFrom(view: View) {
  * @throws NullPointerException if the `LifecycleOwner` cannot be found.
  */
 fun View.attachLifecycleOwnerFrom(view: View) {
-    val lifecycleOwner = view.findViewTreeLifecycleOwner()
-        ?: throw NullPointerException("Failed to get lifecycle owner")
+    val lifecycleOwner = view.findViewTreeLifecycleOwner() ?: throw NullPointerException("Failed to get lifecycle owner")
     setTag(androidx.lifecycle.runtime.R.id.view_tree_lifecycle_owner, lifecycleOwner)
 }
 
@@ -111,17 +148,15 @@ inline fun <reified T : ViewModel> View.activityViewModels(
 
 val View.lifecycleScope: LifecycleCoroutineScope
     get() {
-        val lifecycleOwner = findViewTreeLifecycleOwner() ?: throw IllegalStateException(
-            "View $this does not has a LifecycleOwner set"
-        )
+        val lifecycleOwner = findViewTreeLifecycleOwner()
+            ?: throw IllegalStateException("Lifecycle owner not found in the view tree")
         return lifecycleOwner.lifecycleScope
     }
 
 val View.lifecycle: Lifecycle
     get() {
-        val lifecycleOwner = findViewTreeLifecycleOwner() ?: throw IllegalStateException(
-            "View $this does not has a LifecycleOwner set"
-        )
+        val lifecycleOwner = findViewTreeLifecycleOwner()
+            ?: throw IllegalStateException("Lifecycle owner not found in the view tree")
         return lifecycleOwner.lifecycle
     }
 
@@ -188,27 +223,45 @@ fun View.setBackgroundResourceAttribute(@AttrRes attr: Int) {
     setBackgroundResource(resId)
 }
 
-fun View.resolveStyleAttribute(@AttrRes attr: Int, @StyleRes default: Int = 0): Int {
+fun View.resolveStyleAttribute(
+    @AttrRes attr: Int,
+    @StyleRes default: Int = 0
+): Int {
     return theme.resolveStyleAttribute(attr, default)
 }
 
-fun View.resolveDrawableAttribute(@AttrRes attr: Int, @DrawableRes default: Int = 0): Int {
+fun View.resolveDrawableAttribute(
+    @AttrRes attr: Int,
+    @DrawableRes default: Int = 0
+): Int {
     return theme.resolveDrawableAttribute(attr, default)
 }
 
-fun View.resolveColorAttribute(@AttrRes attr: Int, default: Int = Color.BLACK): Int {
+fun View.resolveColorAttribute(
+    @AttrRes attr: Int,
+    default: Int = Color.BLACK
+): Int {
     return theme.resolveColorAttribute(attr, default)
 }
 
-fun View.resolveDimensionAttribute(@AttrRes attr: Int, default: Float = 0f): Float {
+fun View.resolveDimensionAttribute(
+    @AttrRes attr: Int,
+    default: Float = 0f
+): Float {
     return theme.resolveDimensionAttribute(attr, default)
 }
 
-fun View.resolvePixelDimensionAttribute(@AttrRes attr: Int, default: Int = 0): Int {
+fun View.resolvePixelDimensionAttribute(
+    @AttrRes attr: Int,
+    default: Int = 0
+): Int {
     return theme.resolvePixelDimensionAttribute(attr, default)
 }
 
-fun View.resolveBooleanAttribute(@AttrRes attr: Int, default: Boolean = false): Boolean {
+fun View.resolveBooleanAttribute(
+    @AttrRes attr: Int,
+    default: Boolean = false
+): Boolean {
     return theme.resolveBooleanAttribute(attr, default)
 }
 
@@ -428,16 +481,25 @@ var View.bottomPadding
         setPadding(paddingLeft, paddingTop, paddingRight, value)
     }
 
-fun View.resolveDrawable(@AttrRes attr: Int, @DrawableRes default: Int = 0): Drawable {
+fun View.resolveDrawable(
+    @AttrRes attr: Int,
+    @DrawableRes default: Int = 0
+): Drawable {
     return context.resolveDrawable(attr, default)
 }
 
-fun View.resolveIntArray(@AttrRes attr: Int, @ArrayRes default: Int = 0): IntArray {
+fun View.resolveIntArray(
+    @AttrRes attr: Int,
+    @ArrayRes default: Int = 0
+): IntArray {
     return context.resolveIntArray(attr, default)
 }
 
 fun View.obtainStyledAttributes(
-    set: AttributeSet?, attrs: IntArray, defStyleAttr: Int = 0, defStyleRes: Int = 0
+    set: AttributeSet?,
+    attrs: IntArray,
+    @AttrRes defStyleAttr: Int = 0,
+    @StyleRes defStyleRes: Int = 0
 ): TypedArray {
     return context.theme.obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
 }
