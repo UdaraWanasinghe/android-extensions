@@ -15,6 +15,7 @@ import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StyleRes
 import androidx.core.content.res.ResourcesCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -502,4 +503,21 @@ fun View.obtainStyledAttributes(
     @StyleRes defStyleRes: Int = 0
 ): TypedArray {
     return context.theme.obtainStyledAttributes(set, attrs, defStyleAttr, defStyleRes)
+}
+
+/**
+ * Recursively searches for a Fragment associated with this View or its parent Views.
+ *
+ * @return The Fragment associated with this View or its parent Views, or null if not found.
+ */
+fun View.findFragment(): Fragment? {
+    val tag = getTag(androidx.fragment.R.id.fragment_container_view_tag)
+    if (tag is Fragment) {
+        return tag
+    }
+    val parent = parent
+    if (parent is View) {
+        return parent.findFragment()
+    }
+    return null
 }
