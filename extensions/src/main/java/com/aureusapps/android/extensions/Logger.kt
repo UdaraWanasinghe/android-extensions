@@ -1,7 +1,6 @@
-package com.aureusapps.android.extensions.utils
+package com.aureusapps.android.extensions
 
 import android.util.Log
-import com.aureusapps.android.extensions.BuildConfig
 
 internal object Logger {
 
