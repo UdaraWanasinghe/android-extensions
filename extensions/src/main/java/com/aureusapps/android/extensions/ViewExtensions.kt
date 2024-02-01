@@ -537,3 +537,33 @@ fun View.findFragment(): Fragment? {
 fun View.findFragmentManager(): FragmentManager? {
     return findFragment()?.childFragmentManager ?: context.fragmentManager
 }
+
+/**
+ * Finds a Fragment by its tag within the view tree or in the parent fragment managers.
+ *
+ * @param tag The tag assigned to the Fragment.
+ *
+ * @return The Fragment if found, null otherwise.
+ */
+fun View.findFragmentByTag(tag: String): Fragment? {
+    val fragment = findFragment()
+    if (fragment != null) {
+        val foundFragment = findFragmentByTag(fragment, tag)
+        if (foundFragment != null) {
+            return foundFragment
+        }
+    }
+    return context.fragmentManager?.findFragmentByTag(tag)
+}
+
+private fun findFragmentByTag(fragment: Fragment, tag: String): Fragment? {
+    val foundFragment = fragment.childFragmentManager.findFragmentByTag(tag)
+    if (foundFragment != null) {
+        return foundFragment
+    }
+    val parentFragment = fragment.parentFragment
+    if (parentFragment != null) {
+        return findFragmentByTag(parentFragment, tag)
+    }
+    return null
+}
