@@ -1,5 +1,6 @@
 package com.aureusapps.android.extensions
 
+import android.view.View
 import androidx.fragment.app.Fragment
 
 /**
@@ -20,4 +21,16 @@ fun Fragment.findFragmentByTag(tag: String): Fragment? {
         return parentFragment.findFragmentByTag(tag)
     }
     return null
+}
+
+/**
+ * Finds the first descendant view with the given ID.
+ *
+ * @param id the ID to search for.
+ *
+ * @return The view if found or `null` if not found.
+ */
+fun <T : View> Fragment.findViewById(id: Int): T? {
+    val view = view ?: return null
+    return view.findViewById(id)
 }
