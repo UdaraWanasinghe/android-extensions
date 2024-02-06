@@ -13,7 +13,6 @@ object MatrixUtils {
 
     private val matrixPool = ObjectPool { Matrix() }
     private val matrixArrayPool = ObjectPool { FloatArray(9) }
-    private val pointArrayPool = ObjectPool { FloatArray(2) }
 
     private inline fun <R> getRelativeMatrix(matrix: Matrix, px: Float, py: Float, action: (Matrix) -> R): R {
         val matrix1 = matrixPool.acquire()
