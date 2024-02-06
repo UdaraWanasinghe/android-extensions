@@ -1,7 +1,6 @@
 package com.aureusapps.android.extensions
 
 import android.graphics.Matrix
-import androidx.core.util.Pools.SynchronizedPool
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -12,24 +11,8 @@ import kotlin.math.sqrt
  */
 object MatrixUtils {
 
-    private val matrixArrayPool = SynchronizedPool<FloatArray>(100)
-    private val pointArrayPool = SynchronizedPool<FloatArray>(100)
-
-    private fun acquireMatrixArray(): FloatArray {
-        return matrixArrayPool.acquire() ?: FloatArray(9)
-    }
-
-    private fun releaseMatrixArray(array: FloatArray) {
-        matrixArrayPool.release(array)
-    }
-
-    private fun acquirePointArray(): FloatArray {
-        return pointArrayPool.acquire() ?: FloatArray(2)
-    }
-
-    private fun releasePointArray(array: FloatArray) {
-        pointArrayPool.release(array)
-    }
+    private val matrixArrayPool = ObjectPool { FloatArray(9) }
+    private val pointArrayPool = ObjectPool { FloatArray(2) }
 
     /**
      * Returns translation or location of the origin point of the transformed space relative to the original space.
@@ -49,12 +32,12 @@ object MatrixUtils {
      *
      */
     fun getTranslation(matrix: Matrix): Pair<Float, Float> {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             return matrixArray[2] to matrixArray[5]
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -76,7 +59,7 @@ object MatrixUtils {
      * F(5) = ty
      */
     fun setTranslation(matrix: Matrix, tx: Float, ty: Float) {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             matrixArray[2] = tx
@@ -96,7 +79,7 @@ object MatrixUtils {
      * @return Translation of the given point relative to it's location on the original space.
      */
     fun getTranslation(matrix: Matrix, px: Float, py: Float): Pair<Float, Float> {
-        val pointArray = acquirePointArray()
+        val pointArray = pointArrayPool.acquire()
         try {
             // find location of (px, py) on the transformed space.
             pointArray[0] = px
@@ -105,7 +88,7 @@ object MatrixUtils {
             // find displacement of (px, py) on transformed space relative to (px, py)
             return (pointArray[0] - px) to (pointArray[1] - py)
         } finally {
-            releasePointArray(pointArray)
+            pointArrayPool.release(pointArray)
         }
     }
 
@@ -119,8 +102,8 @@ object MatrixUtils {
      * @param py Y coordinate of the point.
      */
     fun setTranslation(matrix: Matrix, tx: Float, ty: Float, px: Float, py: Float) {
-        val pointArray = acquirePointArray()
-        val matrixArray = acquireMatrixArray()
+        val pointArray = pointArrayPool.acquire()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             // get location of (px, py) on transformed space.
             pointArray[0] = px
@@ -132,8 +115,8 @@ object MatrixUtils {
             matrixArray[5] += ty - pointArray[1] + py
             matrix.setValues(matrixArray)
         } finally {
-            releasePointArray(pointArray)
-            releaseMatrixArray(matrixArray)
+            pointArrayPool.release(pointArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -158,12 +141,12 @@ object MatrixUtils {
      * E(4) = sy ✕ cos(a)
      */
     fun getRotation(matrix: Matrix): Float {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             return atan2(matrixArray[3], matrixArray[0]).toDegrees()
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -188,7 +171,7 @@ object MatrixUtils {
      * E(4) = sy ✕ cos(a)
      */
     fun setRotation(matrix: Matrix, degrees: Float) {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val sx = sqrt(matrixArray[0] * matrixArray[0] + matrixArray[3] * matrixArray[3])
@@ -200,7 +183,7 @@ object MatrixUtils {
             matrixArray[4] = sy * cos(rad)
             matrix.setValues(matrixArray)
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -213,14 +196,14 @@ object MatrixUtils {
      * @return Rotation relative to the point (px, py) on the original space.
      */
     fun getRotation(matrix: Matrix, px: Float, py: Float): Float {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             return atan2(
                 matrixArray[3] - py * matrixArray[6], matrixArray[0] - px * matrixArray[6]
             ).toDegrees()
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -233,7 +216,7 @@ object MatrixUtils {
      * @param py Y coordinate of the point on the original space.
      */
     fun setRotation(matrix: Matrix, degrees: Float, px: Float, py: Float) {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val cr = atan2(
@@ -241,7 +224,7 @@ object MatrixUtils {
             ).toDegrees()
             matrix.postRotate(degrees - cr, px, py)
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -262,14 +245,14 @@ object MatrixUtils {
      * sy = sqrt(B^2+E^2)
      */
     fun getScaling(matrix: Matrix): Pair<Float, Float> {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val sx = sqrt(matrixArray[0] * matrixArray[0] + matrixArray[3] * matrixArray[3])
             val sy = sqrt(matrixArray[1] * matrixArray[1] + matrixArray[4] * matrixArray[4])
             return sx to sy
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -281,7 +264,7 @@ object MatrixUtils {
      * @param sy Scaling on the y direction.
      */
     fun setScaling(matrix: Matrix, sx: Float, sy: Float) {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val cr = atan2(matrixArray[3], matrixArray[0]).toDegrees()
@@ -291,7 +274,7 @@ object MatrixUtils {
             matrixArray[4] = sy * cos(cr)
             matrix.setValues(matrixArray)
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -304,7 +287,7 @@ object MatrixUtils {
      * @return Scaling relative to point (px, py) on the original space.
      */
     fun getScaling(matrix: Matrix, px: Float, py: Float): Pair<Float, Float> {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val a = matrixArray[0] - px * matrixArray[6]
@@ -315,7 +298,7 @@ object MatrixUtils {
             val sy = sqrt(b * b + e * e)
             return sx to sy
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
@@ -329,7 +312,7 @@ object MatrixUtils {
      * @param py Y coordinate of the point.
      */
     fun setScaling(matrix: Matrix, sx: Float, sy: Float, px: Float, py: Float) {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val a = matrixArray[0] - px * matrixArray[6]
@@ -340,12 +323,12 @@ object MatrixUtils {
             val csy = sqrt(b * b + e * e)
             matrix.postScale(sx / csx, sy / csy, px, py)
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
     fun decomposeComponents(matrix: Matrix): MatrixComponents {
-        val matrixArray = acquireMatrixArray()
+        val matrixArray = matrixArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val sx = sqrt(matrixArray[0] * matrixArray[0] + matrixArray[3] * matrixArray[3])
@@ -355,13 +338,13 @@ object MatrixUtils {
             val ty = matrixArray[5]
             return MatrixComponents(sx to sy, r, tx to ty, 0f to 0f)
         } finally {
-            releaseMatrixArray(matrixArray)
+            matrixArrayPool.release(matrixArray)
         }
     }
 
     fun decomposeComponents(matrix: Matrix, pivot: Pair<Float, Float>): MatrixComponents {
-        val matrixArray = acquireMatrixArray()
-        val pointArray = acquirePointArray()
+        val matrixArray = matrixArrayPool.acquire()
+        val pointArray = pointArrayPool.acquire()
         try {
             matrix.getValues(matrixArray)
             val (px, py) = pivot
@@ -381,8 +364,8 @@ object MatrixUtils {
             val ty = pointArray[1] - py
             return MatrixComponents(sx to sy, r, tx to ty, px to py)
         } finally {
-            releaseMatrixArray(matrixArray)
-            releasePointArray(pointArray)
+            matrixArrayPool.release(matrixArray)
+            pointArrayPool.release(pointArray)
         }
     }
 
