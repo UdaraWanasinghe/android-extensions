@@ -10,6 +10,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MatrixExtensionsInstrumentedTest {
 
+    companion object {
+        private const val PRECISION = 0.01f
+        private const val TRANSLATION_PRECISION = 0.01f
+    }
+
     @Test
     fun testGetTranslation00() {
         val m = Matrix()
@@ -17,8 +22,8 @@ class MatrixExtensionsInstrumentedTest {
         m.postRotate(30f)
         m.postTranslate(10f, 20f)
         val (tx, ty) = MatrixUtils.getTranslation(m)
-        Assert.assertEquals(10f, tx, 0.1f)
-        Assert.assertEquals(20f, ty, 0.1f)
+        Assert.assertEquals(10f, tx, TRANSLATION_PRECISION)
+        Assert.assertEquals(20f, ty, TRANSLATION_PRECISION)
     }
 
     @Test
@@ -28,31 +33,54 @@ class MatrixExtensionsInstrumentedTest {
         m.postRotate(30f)
         MatrixUtils.setTranslation(m, 10f, 20f)
         val (tx, ty) = MatrixUtils.getTranslation(m)
-        Assert.assertEquals(10f, tx, 0.1f)
-        Assert.assertEquals(20f, ty, 0.1f)
+        Assert.assertEquals(10f, tx, TRANSLATION_PRECISION)
+        Assert.assertEquals(20f, ty, TRANSLATION_PRECISION)
     }
 
     @Test
     fun testGetTranslationPxPy() {
+        val px = 5f
+        val py = 5f
         val m = Matrix()
-        m.postScale(2f, 2f)
-        m.postRotate(30f)
+
+        // only translation
+        m.setTranslate(10f, 20f)
+        val (tx1, ty1) = MatrixUtils.getTranslation(m, px, py)
+        Assert.assertEquals(10f, tx1, TRANSLATION_PRECISION)
+        Assert.assertEquals(20f, ty1, TRANSLATION_PRECISION)
+
+        // scaling followed by translation
+        m.setScale(2f, 3f, px, py)
         m.postTranslate(10f, 20f)
-        val (tx, ty) = MatrixUtils.getTranslation(m, 5f, 5f)
-        Assert.assertEquals(8.66f, tx, 0.1f)
-        Assert.assertEquals(28.66f, ty, 0.1f)
+        val (tx2, ty2) = MatrixUtils.getTranslation(m, px, py)
+        Assert.assertEquals(10f, tx2, TRANSLATION_PRECISION)
+        Assert.assertEquals(20f, ty2, TRANSLATION_PRECISION)
+
+        // scaling, rotation and then translation
+        m.setScale(2f, 3f, px, py)
+        m.postRotate(30f, px, py)
+        m.postTranslate(10f, 30f)
+        val (tx3, ty3) = MatrixUtils.getTranslation(m, px, py)
+        Assert.assertEquals(10f, tx3, TRANSLATION_PRECISION)
+        Assert.assertEquals(30f, ty3, TRANSLATION_PRECISION)
     }
 
     @Test
     fun testSetTranslationTxTyPxPy() {
+        val px = 5f
+        val py = 5f
         val m = Matrix()
-        m.postScale(2f, 2f)
-        m.postRotate(30f)
+
+        m.setScale(2f, 2f, px, py)
+        m.postRotate(30f, px, py)
         m.postTranslate(10f, 20f)
-        MatrixUtils.setTranslation(m, 30f, 30f, 5f, 5f)
-        val (tx, ty) = MatrixUtils.getTranslation(m, 5f, 5f)
-        Assert.assertEquals(30f, tx, 0.1f)
-        Assert.assertEquals(30f, ty, 0.1f)
+
+        MatrixUtils.setTranslation(m, 20f, 50f, px, py)
+
+        val (tx, ty) = MatrixUtils.getTranslation(m, px, py)
+
+        Assert.assertEquals(20f, tx, PRECISION)
+        Assert.assertEquals(50f, ty, PRECISION)
     }
 
     @Test

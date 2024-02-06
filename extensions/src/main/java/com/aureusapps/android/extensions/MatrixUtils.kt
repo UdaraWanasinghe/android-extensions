@@ -11,6 +11,7 @@ import kotlin.math.sqrt
  */
 object MatrixUtils {
 
+    private val matrixPool = ObjectPool { Matrix() }
     private val matrixArrayPool = ObjectPool { FloatArray(9) }
     private val pointArrayPool = ObjectPool { FloatArray(2) }
 
@@ -79,16 +80,21 @@ object MatrixUtils {
      * @return Translation of the given point relative to it's location on the original space.
      */
     fun getTranslation(matrix: Matrix, px: Float, py: Float): Pair<Float, Float> {
-        val pointArray = pointArrayPool.acquire()
+        val matrix1 = matrixPool.acquire()
+        val matrix2 = matrixPool.acquire()
+        val matrix3 = matrixPool.acquire()
         try {
-            // find location of (px, py) on the transformed space.
-            pointArray[0] = px
-            pointArray[1] = py
-            matrix.mapPoints(pointArray)
-            // find displacement of (px, py) on transformed space relative to (px, py)
-            return (pointArray[0] - px) to (pointArray[1] - py)
+            matrix1.setTranslate(-px, -py)
+            matrix2.setTranslate(px, py)
+            matrix1.invert(matrix3)
+            matrix3.postConcat(matrix)
+            matrix2.invert(matrix1)
+            matrix3.postConcat(matrix1)
+            return getTranslation(matrix3)
         } finally {
-            pointArrayPool.release(pointArray)
+            matrixPool.release(matrix1)
+            matrixPool.release(matrix2)
+            matrixPool.release(matrix3)
         }
     }
 
@@ -102,21 +108,25 @@ object MatrixUtils {
      * @param py Y coordinate of the point.
      */
     fun setTranslation(matrix: Matrix, tx: Float, ty: Float, px: Float, py: Float) {
-        val pointArray = pointArrayPool.acquire()
-        val matrixArray = matrixArrayPool.acquire()
+        val matrix1 = matrixPool.acquire()
+        val matrix2 = matrixPool.acquire()
+        val matrix3 = matrixPool.acquire()
         try {
-            // get location of (px, py) on transformed space.
-            pointArray[0] = px
-            pointArray[1] = py
-            matrix.mapPoints(pointArray)
-            // find difference in translation and add it to the translation values.
-            matrix.getValues(matrixArray)
-            matrixArray[2] += tx - pointArray[0] + px
-            matrixArray[5] += ty - pointArray[1] + py
-            matrix.setValues(matrixArray)
+            matrix1.setTranslate(-px, -py)
+            matrix2.setTranslate(px, py)
+            matrix1.invert(matrix3)
+            matrix3.postConcat(matrix)
+            matrix2.invert(matrix1)
+            matrix3.postConcat(matrix1)
+            setTranslation(matrix3, tx, ty)
+            matrix1.setTranslate(-px, -py)
+            matrix1.postConcat(matrix3)
+            matrix1.postConcat(matrix2)
+            matrix.set(matrix1)
         } finally {
-            pointArrayPool.release(pointArray)
-            matrixArrayPool.release(matrixArray)
+            matrixPool.release(matrix1)
+            matrixPool.release(matrix2)
+            matrixPool.release(matrix3)
         }
     }
 
