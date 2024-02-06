@@ -107,7 +107,7 @@ object MatrixUtils {
             matrixArray[5] = ty
             matrix.setValues(matrixArray)
         } finally {
-
+            matrixArrayPool.release(matrixArray)
         }
     }
 
