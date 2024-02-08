@@ -1,17 +1,6 @@
 package com.aureusapps.android.extensions
 
-import android.os.Build
 import android.widget.TextView
-import androidx.annotation.StyleRes
-
-@Suppress("DEPRECATION")
-fun TextView.setTextStyle(@StyleRes resId: Int) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        setTextAppearance(resId)
-    } else {
-        setTextAppearance(context, resId)
-    }
-}
 
 /**
  * Updates the text of the TextView and sets a tag to indicate whether the text was edited by the user or not.
