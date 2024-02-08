@@ -507,6 +507,16 @@ fun View.obtainStyledAttributes(
 }
 
 /**
+ * Obtains a `TypedArray` containing the styled attribute values in this `View`'s theme.
+ *
+ * @param attrs An array of resource IDs representing the desired styled attributes.
+ * @return A `TypedArray` containing the styled attribute values.
+ */
+fun View.obtainStyledAttributes(attrs: IntArray): TypedArray {
+    return context.theme.obtainStyledAttributes(attrs)
+}
+
+/**
  * Recursively searches for a Fragment associated with this View or its parent Views.
  *
  * @return The Fragment associated with this View or its parent Views, or null if not found.
