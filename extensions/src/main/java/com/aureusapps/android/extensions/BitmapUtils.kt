@@ -4,6 +4,12 @@ import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Paint.ANTI_ALIAS_FLAG
+import android.graphics.Paint.FILTER_BITMAP_FLAG
+import android.graphics.RectF
 import android.net.Uri
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -82,7 +88,7 @@ object BitmapUtils {
         directoryUri: Uri,
         fileName: String,
         compressFormat: Bitmap.CompressFormat = Bitmap.CompressFormat.PNG,
-        compressQuality: Int = 100
+        compressQuality: Int = 100,
     ): Uri? {
         var outputStream: OutputStream? = null
         var uri: Uri? = null
@@ -104,6 +110,33 @@ object BitmapUtils {
             outputStream?.close()
         }
         return uri
+    }
+
+    /**
+     * Scales the provided bitmap to the specified width and height using the given scale type.
+     *
+     * @param bitmap The bitmap to be scaled.
+     * @param width The target width for the scaled bitmap.
+     * @param height The target height for the scaled bitmap.
+     * @param stf The scaling behavior to be applied. Default is Matrix.ScaleToFit.FILL.
+     *
+     * @return The scaled bitmap.
+     */
+    fun scaleBitmap(
+        bitmap: Bitmap,
+        width: Int,
+        height: Int,
+        stf: Matrix.ScaleToFit = Matrix.ScaleToFit.FILL,
+    ): Bitmap {
+        val matrix = Matrix()
+        val srcRect = RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat())
+        val dstRect = RectF(0f, 0f, width.toFloat(), height.toFloat())
+        matrix.setRectToRect(srcRect, dstRect, stf)
+        val resizedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(resizedBitmap)
+        val paint = Paint(ANTI_ALIAS_FLAG or FILTER_BITMAP_FLAG)
+        canvas.drawBitmap(bitmap, matrix, paint)
+        return resizedBitmap
     }
 
 }
