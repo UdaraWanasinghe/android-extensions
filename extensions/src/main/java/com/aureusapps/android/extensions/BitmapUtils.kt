@@ -134,7 +134,12 @@ object BitmapUtils {
         matrix.setRectToRect(srcRect, dstRect, stf)
         val resizedBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(resizedBitmap)
-        val paint = Paint(ANTI_ALIAS_FLAG or FILTER_BITMAP_FLAG)
+        val filterFlag = if (srcRect.width() < dstRect.width() && srcRect.height() < dstRect.height()) {
+            FILTER_BITMAP_FLAG
+        } else {
+            0
+        }
+        val paint = Paint(ANTI_ALIAS_FLAG or filterFlag)
         canvas.drawBitmap(bitmap, matrix, paint)
         return resizedBitmap
     }
