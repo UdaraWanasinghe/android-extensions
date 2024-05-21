@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test.utils
+package com.aureusapps.android.extensions.utils
 
 import android.content.ContentResolver
 import android.content.Context
@@ -39,12 +39,12 @@ object TestHelpers {
     }
 
     data class FileNode(
-        override val name: String
+        override val name: String,
     ) : Node()
 
     data class DirectoryNode(
         override val name: String,
-        val children: List<Node>
+        val children: List<Node>,
     ) : Node()
 
 }

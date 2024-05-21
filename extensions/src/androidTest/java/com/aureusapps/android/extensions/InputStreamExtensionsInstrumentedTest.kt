@@ -1,10 +1,9 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.writeTo
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test

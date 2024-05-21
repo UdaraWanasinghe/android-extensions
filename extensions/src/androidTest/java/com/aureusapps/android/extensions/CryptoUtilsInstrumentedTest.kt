@@ -1,10 +1,10 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.CryptoUtils
-import com.aureusapps.android.extensions.test.utils.TestHelpers
+import com.aureusapps.android.extensions.test.R
+import com.aureusapps.android.extensions.utils.TestHelpers
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

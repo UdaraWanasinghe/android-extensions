@@ -1,15 +1,12 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.copyTo
-import com.aureusapps.android.extensions.test.utils.TestHelpers
-import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
-import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
-import com.aureusapps.android.extensions.walkBottomUp
-import com.aureusapps.android.extensions.walkTopDown
+import com.aureusapps.android.extensions.utils.TestHelpers
+import com.aureusapps.android.extensions.utils.TestHelpers.DirectoryNode
+import com.aureusapps.android.extensions.utils.TestHelpers.FileNode
 import com.aureusapps.android.providerfile.ProviderFile
 import org.junit.Assert
 import org.junit.Assert.assertTrue

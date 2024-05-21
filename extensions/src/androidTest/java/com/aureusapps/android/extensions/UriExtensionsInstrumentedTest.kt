@@ -1,36 +1,20 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.MediaStore
-import androidx.activity.ComponentActivity
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.net.toUri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.copyTo
-import com.aureusapps.android.extensions.createDirectory
-import com.aureusapps.android.extensions.createFile
-import com.aureusapps.android.extensions.delete
-import com.aureusapps.android.extensions.exists
-import com.aureusapps.android.extensions.fileName
-import com.aureusapps.android.extensions.findFile
-import com.aureusapps.android.extensions.isDirectory
-import com.aureusapps.android.extensions.isEmpty
-import com.aureusapps.android.extensions.listFiles
-import com.aureusapps.android.extensions.readBytes
-import com.aureusapps.android.extensions.readText
-import com.aureusapps.android.extensions.readToBuffer
-import com.aureusapps.android.extensions.test.utils.TestHelpers
-import com.aureusapps.android.extensions.test.utils.TestHelpers.DirectoryNode
-import com.aureusapps.android.extensions.test.utils.TestHelpers.FileNode
-import com.aureusapps.android.extensions.writeBytes
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.aureusapps.android.extensions.test.R
+import com.aureusapps.android.extensions.test.SelectTestDirectoryActivity
+import com.aureusapps.android.extensions.utils.TestHelpers
+import com.aureusapps.android.extensions.utils.TestHelpers.DirectoryNode
+import com.aureusapps.android.extensions.utils.TestHelpers.FileNode
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -540,7 +524,7 @@ class UriExtensionsInstrumentedTest {
 
     private fun createContentProviderFile(
         fileName: String = genRandomName(extension = "txt"),
-        text: String = "Sample text"
+        text: String = "Sample text",
     ): Uri {
         val textFileUri = DocumentsContract.createDocument(
             context.contentResolver,
@@ -624,7 +608,6 @@ class UriExtensionsInstrumentedTest {
         const val TEST_DIR_KEY = "TEST_DIR_KEY"
 
         @JvmStatic
-        @OptIn(ExperimentalCoroutinesApi::class)
         @BeforeClass
         fun setUp(): Unit = runTest {
             val context = ApplicationProvider.getApplicationContext<Context>()
@@ -650,23 +633,6 @@ class UriExtensionsInstrumentedTest {
             }
         }
 
-    }
-
-    class SelectTestDirectoryActivity : ComponentActivity() {
-        companion object {
-            var onDocumentSelected: ((Uri?) -> Unit)? = null
-        }
-
-        private val openDocumentTreeContract = ActivityResultContracts.OpenDocumentTree()
-        private val documentSelector = registerForActivityResult(openDocumentTreeContract) { uri ->
-            onDocumentSelected?.invoke(uri)
-            finish()
-        }
-
-        override fun onCreate(savedInstanceState: Bundle?) {
-            super.onCreate(savedInstanceState)
-            documentSelector.launch(null)
-        }
     }
 
 }

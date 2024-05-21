@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test.db
+package com.aureusapps.android.extensions.db
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -22,5 +22,5 @@ data class Phone(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
     val userId: Long,
-    val number: String
+    val number: String,
 )

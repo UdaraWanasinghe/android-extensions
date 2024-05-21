@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.aureusapps.gradle.PublishLibraryConstants.GROUP_ID
+import com.aureusapps.gradle.PublishLibraryConstants.VERSION_NAME
 
 plugins {
     id("com.android.library")
@@ -11,15 +12,14 @@ plugins {
 }
 
 class Props(project: Project) {
-    val groupId = project.findProperty(GROUP_ID).toString()
-    val artifactId = "extensions"
-    val versionName = "1.0.4"
+    val groupId = project.findProperty(GROUP_ID) as String
+    val versionName = project.findProperty(VERSION_NAME) as String
 }
 
 val props = Props(project)
 
 android {
-    namespace = "${props.groupId}.${props.artifactId}"
+    namespace = "${props.groupId}.extensions"
     compileSdk = 34
     defaultConfig {
         minSdk = 21
@@ -39,7 +39,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
+        jvmTarget = "17"
     }
     buildFeatures {
         buildConfig = true
@@ -54,7 +54,7 @@ android {
 
 publishLibrary {
     groupId.set(props.groupId)
-    artifactId.set(props.artifactId)
+    artifactId.set("extensions")
     versionName.set(props.versionName)
     libName.set("Extensions")
     libDescription.set("Useful extension functions and utility classes for android development.")
@@ -69,27 +69,27 @@ publishLibrary {
 }
 
 dependencies {
-    implementation(libs.core.ktx)
-    implementation(libs.appcompat)
-    implementation(libs.material)
-    implementation(libs.room.runtime)
-    kapt(libs.room.compiler)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.android.material)
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler)
     implementation(libs.okhttp)
-    implementation(libs.activity.ktx)
+    implementation(libs.androidx.activity.ktx)
     implementation(libs.aureusapps.providerfile)
-    implementation(libs.espresso.core)
+    implementation(libs.androidx.test.espresso.core)
     implementation(libs.kotlinx.coroutines.android)
 
-    testImplementation(libs.junit)
+    testImplementation(libs.test.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 
     androidTestImplementation("androidx.test.espresso:espresso-intents:3.5.1")
-    androidTestImplementation(libs.junit.ext)
-    androidTestImplementation(libs.espresso.core)
-    androidTestImplementation(libs.room.runtime)
-    kaptAndroidTest(libs.room.compiler)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.room.runtime)
+    kaptAndroidTest(libs.androidx.room.compiler)
     androidTestImplementation(libs.okhttp)
     androidTestImplementation(libs.okhttp.mockwebserver)
-    androidTestImplementation(libs.test.core.ktx)
+    androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.kotlinx.coroutines.test)
 }

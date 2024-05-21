@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test.db
+package com.aureusapps.android.extensions.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -8,5 +8,5 @@ data class User(
     @PrimaryKey(autoGenerate = true)
     val id: Long,
     val name: String,
-    val email: String
+    val email: String,
 )

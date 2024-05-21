@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test.db
+package com.aureusapps.android.extensions.db
 
 import androidx.room.Embedded
 import androidx.room.Relation
@@ -10,5 +10,5 @@ data class UserWithPhones(
         parentColumn = "id",
         entityColumn = "userId"
     )
-    val userId: Long
+    val userId: Long,
 )

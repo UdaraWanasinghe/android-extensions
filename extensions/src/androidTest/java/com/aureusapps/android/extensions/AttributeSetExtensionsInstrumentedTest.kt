@@ -1,14 +1,11 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.content.Context
 import android.graphics.Color
 import android.util.Xml
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.forEachTag
-import com.aureusapps.android.extensions.getColorAttribute
-import com.aureusapps.android.extensions.getDimensionAttribute
-import com.aureusapps.android.extensions.wrapTheme
+import com.aureusapps.android.extensions.test.R
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,8 +1,7 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import android.graphics.Matrix
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.aureusapps.android.extensions.*
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith

@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test.db
+package com.aureusapps.android.extensions.db
 
 import android.content.Context
 import androidx.room.Database

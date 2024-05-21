@@ -1,4 +1,4 @@
-package com.aureusapps.android.extensions.test
+package com.aureusapps.android.extensions
 
 import org.junit.runner.RunWith
 import org.junit.runners.Suite
