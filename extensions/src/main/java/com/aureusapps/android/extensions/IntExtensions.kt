@@ -46,8 +46,8 @@ fun Int.getBitRange(range: IntRange): Int {
  * Usage:
  * val fileSizeInBytes = 5.KB // 5 KB = 5120 bytes
  */
-val Int.KB: Int
-    get() = this * 1024
+val Int.KB: Long
+    get() = this * 1024L
 
 /**
  * Extension property to converts an integer representing megabytes to bytes.
@@ -55,7 +55,8 @@ val Int.KB: Int
  * Usage:
  * val fileSizeInBytes = 5.MB // 5 MB = 5242880 bytes
  */
-val Int.MB get() = this * 1024 * 1024
+val Int.MB: Long
+    get() = this * 1024L * 1024L
 
 /**
  * Extension property to convert an integer representing gigabytes to bytes.
@@ -63,8 +64,8 @@ val Int.MB get() = this * 1024 * 1024
  * Usage:
  * val fileSizeInBytes = 2.GB // 2 GB = 2147483648 bytes
  */
-val Int.GB: Int
-    get() = this * 1024 * 1024 * 1024
+val Int.GB: Long
+    get() = this * 1024L * 1024L * 1024L
 
 /**
  * Extension property to convert an integer representing terabytes to bytes.
