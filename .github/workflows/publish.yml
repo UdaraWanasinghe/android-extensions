@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: UdaraWanasinghe/android-version-catalog
+          ref: v1.0.1
           token: ${{ secrets.VERSION_CATALOG_ACCESS_TOKEN }}
           path: android-version-catalog
 
@@ -36,6 +37,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: UdaraWanasinghe/common-gradle-plugins
+          ref: v1.0.0
           token: ${{ secrets.COMMON_GRADLE_PLUGINS_ACCESS_TOKEN }}
           path: common-gradle-plugins
 
@@ -43,11 +45,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           path: android-extensions
+          ref: v1.0.6
 
       - name: Check out android-providerfile
         uses: actions/checkout@v3
         with:
           repository: UdaraWanasinghe/android-providerfile
+          ref: v1.0.1
           token: ${{ secrets.PROVIDERFILE_ACCESS_TOKEN }}
           path: android-providerfile
 
