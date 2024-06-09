@@ -25,6 +25,13 @@ jobs:
           distribution: adopt
           java-version: 17
 
+      - name: Check out material-components-android
+        uses: actions/checkout@v3
+        with:
+          repository: UdaraWanasinghe/material-components-android
+          ref: release-1.12-hotfix
+          path: material-components-android
+
       - name: Check out android-version-catalog
         uses: actions/checkout@v3
         with:
@@ -54,6 +61,10 @@ jobs:
           ref: v1.0.1
           token: ${{ secrets.PROVIDERFILE_ACCESS_TOKEN }}
           path: android-providerfile
+
+      - name: Publish material-components-android
+        working-directory: material-components-android
+        run: ./gradlew publishToMavenLocal
 
       - name: Publish android-version-catalog
         working-directory: android-version-catalog
