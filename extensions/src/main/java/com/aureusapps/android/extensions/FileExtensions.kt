@@ -5,6 +5,8 @@ import android.webkit.MimeTypeMap
 import com.aureusapps.android.providerfile.ProviderFile
 import java.io.File
 import java.io.FileInputStream
+import java.io.InputStream
+import java.io.OutputStream
 
 data class FileException(
     val file: File,
@@ -98,67 +100,79 @@ fun File.copyTo(
         return false
     }
 
-    if (isDirectory) {
-        var currentFile = parentDir.findFile(name)
-        val shouldCreateDir: Boolean = when {
-            currentFile == null -> true
-            currentFile.isDirectory -> false
-            else -> {
-                val stillExists = !(overwrite && currentFile.delete())
-                if (stillExists) {
-                    onError(ProviderFileException(currentFile, "Destination provider file exists"))
+    try {
+        if (isDirectory) {
+            var currentFile = parentDir.findFile(name)
+            val shouldCreateDir: Boolean = when {
+                currentFile == null -> true
+                currentFile.isDirectory -> false
+                else -> {
+                    val stillExists = !(overwrite && currentFile.delete())
+                    if (stillExists) {
+                        onError(ProviderFileException(currentFile, "Destination provider file exists"))
+                        return false
+                    }
+                    true
+                }
+            }
+            if (shouldCreateDir) {
+                currentFile = parentDir.createDirectory(name)
+                if (currentFile == null) {
+                    onError(CreateProviderFileFailedException(parentDir, name))
                     return false
                 }
-                true
             }
-        }
-        if (shouldCreateDir) {
-            currentFile = parentDir.createDirectory(name)
-            if (currentFile == null) {
+
+            // at this point existing is a directory
+            // now copy children to the existing
+            val childFiles = listFiles()
+            var success = true
+            if (childFiles != null) {
+                for (childFile in childFiles) {
+                    var resume = true
+                    childFile.copyTo(context, currentFile!!, overwrite) { exception ->
+                        success = false
+                        onError(exception).also { resume = it }
+                    }
+                    if (!resume) {
+                        break
+                    }
+                }
+            }
+            return success
+        } else {
+            val currentFile = parentDir.findFile(name)
+            val stillExists = currentFile != null && !(overwrite && currentFile.delete())
+            if (stillExists) {
+                onError(ProviderFileException(currentFile!!, "Destination provider file exists"))
+                return false
+            }
+            val mimeType = MimeTypeMap.getSingleton()
+                .getMimeTypeFromExtension(extension)
+                ?: "application/octet-stream"
+            val newFile = parentDir.createFile(mimeType, nameWithoutExtension)
+            if (newFile == null) {
                 onError(CreateProviderFileFailedException(parentDir, name))
                 return false
             }
-        }
 
-        // at this point existing is a directory
-        // now copy children to the existing
-        val childFiles = listFiles()
-        var success = true
-        if (childFiles != null) {
-            for (childFile in childFiles) {
-                var resume = true
-                childFile.copyTo(context, currentFile!!, overwrite) { exception ->
-                    success = false
-                    onError(exception).also { resume = it }
+            var input: InputStream? = null
+            var output: OutputStream? = null
+            try {
+                output = newFile.openOutputStream(context)
+                    ?: throw ProviderFileException(newFile, "Failed to open provider file output stream")
+                input = FileInputStream(this)
+                input.writeTo(output) { exception ->
+                    throw exception
                 }
-                if (!resume) {
-                    break
-                }
+            } finally {
+                input?.closeQuietly()
+                output?.closeQuietly()
             }
+            return true
         }
-        return success
-    } else {
-        val currentFile = parentDir.findFile(name)
-        val stillExists = currentFile != null && !(overwrite && currentFile.delete())
-        if (stillExists) {
-            onError(ProviderFileException(currentFile!!, "Destination provider file exists"))
-            return false
-        }
-        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "application/octet-stream"
-        val newFile = parentDir.createFile(mimeType, nameWithoutExtension)
-        if (newFile == null) {
-            onError(CreateProviderFileFailedException(parentDir, name))
-            return false
-        }
-        val outputStream = newFile.openOutputStream(context)
-        if (outputStream == null) {
-            onError(ProviderFileException(newFile, "Failed to open provider file output stream"))
-            return false
-        }
-        val inputStream = FileInputStream(this)
-        inputStream.writeTo(outputStream) { exception ->
-            throw exception
-        }
-        return true
+    } catch (e: Exception) {
+        onError(e)
+        return false
     }
 }
