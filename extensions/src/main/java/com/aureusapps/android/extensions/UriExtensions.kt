@@ -36,6 +36,11 @@ enum class UriExtensionErrors(val message: String) {
     EXCEPTION_OCCURRED("Exception occurred.")
 }
 
+data class UnsupportedUriException(
+    val uri: Uri,
+    override val message: String = "Unsupported uri",
+) : Exception(message)
+
 /**
  * Returns true if the uri is a document tree uri (Uri returned by ACTION_OPEN_DOCUMENT_TREE), otherwise false.
  */
@@ -96,7 +101,7 @@ inline fun <T> Uri.queryForValue(
     context: Context,
     column: String,
     defaultValue: T,
-    block: (Cursor) -> T
+    block: (Cursor) -> T,
 ): T {
     val resolver = context.contentResolver
     var cursor: Cursor? = null
@@ -171,7 +176,8 @@ fun Uri.fileName(context: Context): String? {
     try {
         when (scheme) {
             SCHEME_CONTENT,
-            SCHEME_FILE -> {
+            SCHEME_FILE,
+            -> {
                 fileName = ProviderFile.fromUri(context, this)?.name
             }
 
@@ -191,7 +197,8 @@ fun Uri.fileName(context: Context): String? {
             }
 
             "https",
-            "http" -> {
+            "http",
+            -> {
                 fileName = path
                     ?.substringAfterLast("/")
                     ?.substringBefore("?")
@@ -287,7 +294,7 @@ fun Uri.createFile(
     context: Context,
     fileName: String,
     overwrite: Boolean = false,
-    onError: (UriExtensionErrors) -> Unit = {}
+    onError: (UriExtensionErrors) -> Unit = {},
 ): Uri? {
     var fileUri: Uri? = null
     try {
@@ -387,7 +394,7 @@ fun Uri.createDirectory(
     context: Context,
     dirName: String,
     overwrite: Boolean = false,
-    onError: (UriExtensionErrors) -> Unit = {}
+    onError: (UriExtensionErrors) -> Unit = {},
 ): Uri? {
     var dirUri: Uri? = null
     try {
@@ -488,7 +495,7 @@ fun Uri.getOrCreateDirectory(
     context: Context,
     dirName: String,
     overwrite: Boolean = false,
-    onError: (UriExtensionErrors) -> Unit = {}
+    onError: (UriExtensionErrors) -> Unit = {},
 ): Uri? {
     val existing = findFile(context, dirName)
     if (existing != null && existing.isDirectory(context)) {
@@ -545,7 +552,8 @@ fun Uri.exists(context: Context): Boolean {
             }
 
             "http",
-            "https" -> {
+            "https",
+            -> {
                 val url = URL(toString())
                 val connection = url.openConnection() as HttpURLConnection
                 connection.connect()
@@ -659,7 +667,8 @@ fun Uri.findDirectory(context: Context, dirName: String): Uri? {
 fun Uri.fileSize(context: Context): Long {
     return when (scheme) {
         SCHEME_FILE,
-        SCHEME_CONTENT -> ProviderFile.fromUri(context, this)?.length() ?: 0
+        SCHEME_CONTENT,
+        -> ProviderFile.fromUri(context, this)?.length() ?: 0
 
         SCHEME_ANDROID_RESOURCE -> context
             .contentResolver
@@ -668,7 +677,8 @@ fun Uri.fileSize(context: Context): Long {
             ?: 0
 
         "http",
-        "https" -> {
+        "https",
+        -> {
             val url = toString()
             val con = URL(url).openConnection() as HttpURLConnection
             con.connectTimeout = 20000
@@ -697,12 +707,14 @@ fun Uri.openInputStream(context: Context): InputStream? {
         when (scheme) {
             SCHEME_CONTENT,
             SCHEME_FILE,
-            SCHEME_ANDROID_RESOURCE -> {
+            SCHEME_ANDROID_RESOURCE,
+            -> {
                 inputStream = context.contentResolver.openInputStream(this)
             }
 
             "http",
-            "https" -> {
+            "https",
+            -> {
                 val request = Request.Builder()
                     .url(toString())
                     .build()
@@ -779,17 +791,19 @@ fun Uri.copyTo(
     context: Context,
     targetParent: Uri,
     overwrite: Boolean = false,
-    onError: (String) -> Boolean = { true }
+    onError: (String) -> Boolean = { true },
 ): Boolean {
     val srcScheme = this.scheme
     val dstScheme = targetParent.scheme
     val srcDocument = when (srcScheme) {
         SCHEME_FILE,
-        SCHEME_CONTENT -> ProviderFile.fromUri(context, this)
+        SCHEME_CONTENT,
+        -> ProviderFile.fromUri(context, this)
 
         SCHEME_ANDROID_RESOURCE,
         "http",
-        "https" -> null
+        "https",
+        -> null
 
         else -> {
             onError("Unsupported source uri.")
@@ -798,7 +812,8 @@ fun Uri.copyTo(
     }
     val dstDocument = when (dstScheme) {
         SCHEME_FILE,
-        SCHEME_CONTENT -> ProviderFile.fromUri(context, targetParent)
+        SCHEME_CONTENT,
+        -> ProviderFile.fromUri(context, targetParent)
 
         else -> {
             onError("Unsupported destination uri.")
@@ -840,7 +855,56 @@ fun Uri.copyTo(
             outputStream.close()
         }
     }
+}
 
+/**
+ * Move files recursively from this uri to the [dstUri].
+ */
+fun Uri.moveTo(
+    context: Context,
+    dstUri: Uri,
+    overwrite: Boolean = false,
+    onError: (Exception) -> Boolean = { false },
+): Boolean {
+    try {
+        if (scheme == SCHEME_FILE) {
+            val srcFile = toFile()
+            if (dstUri.scheme == SCHEME_FILE) {
+                val dstFile = dstUri.toFile()
+                return srcFile.moveTo(dstFile, overwrite, onError)
+            } else {
+                try {
+                    val dstFile = ProviderFile.fromUri(context, dstUri)
+                    if (dstFile == null) {
+                        onError(UnsupportedUriException(dstUri))
+                        return false
+                    }
+                    if (srcFile.isDirectory) {
+                        if (dstFile.isDirectory) {
+                            for (file in srcFile.walkTopDown()) {
+                                if (file.isDirectory) {
+                                    val dstFile = dstFile.findFile(file.name)
+                                    if (dstFile != null && dstFile.isDirectory) {
+
+                                    }
+                                }
+                            }
+                        } else {
+                            onError(UnsupportedUriException(dstUri, "Expected directory uri"))
+                            return false
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    onError(e)
+                    return false
+                }
+            }
+        }
+    } catch (e: Exception) {
+        onError(e)
+    }
+    return false
 }
 
 /**

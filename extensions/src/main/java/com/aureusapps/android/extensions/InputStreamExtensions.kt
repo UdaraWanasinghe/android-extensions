@@ -2,68 +2,105 @@ package com.aureusapps.android.extensions
 
 import android.content.Context
 import android.net.Uri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
-suspend fun InputStream.writeTo(path: String, bufferSize: Int = 8192): Long {
-    return withContext(Dispatchers.IO) {
+/**
+ * Copies all bytes from this input stream to the specified output stream [out].
+ *
+ * @param out The output stream to write bytes to.
+ * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
+ * @param onError Optional handler for errors that occur during copying.
+ *                Exceptions caught during the copy process will be passed to this handler.
+ *                Default behavior is to swallow exceptions silently.
+ * @return The total number of bytes copied or -1L if error occurred.
+ */
+fun InputStream.writeTo(
+    out: OutputStream,
+    bufferSize: Int = 8192,
+    onError: (Exception) -> Unit = {},
+): Long {
+    var output: OutputStream? = null
+    return try {
+        val input = BufferedInputStream(this@writeTo)
+        output = BufferedOutputStream(out)
+        val buffer = ByteArray(bufferSize)
+        var read: Int
+        var size = 0L
+        while (input.read(buffer).also { read = it } != -1) {
+            size += read
+            output.write(buffer, 0, read)
+        }
+        size
+    } catch (e: Exception) {
+        onError(e)
+        -1L
+    } finally {
+        output?.flush()
+    }
+}
+
+/**
+ * Copies all bytes from this input stream to the file specified by [path].
+ *
+ * @param path The path of the file to write bytes to.
+ * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
+ * @param onError Optional handler for errors that occur during copying.
+ *                Exceptions caught during the copy process will be passed to this handler.
+ *                Default behavior is to swallow exceptions silently.
+ * @return The total number of bytes copied or -1L if error occurred.
+ */
+fun InputStream.writeTo(
+    path: String,
+    bufferSize: Int = 8192,
+    onError: (Exception) -> Unit = {},
+): Long {
+    var output: OutputStream? = null
+    return try {
         val file = File(path)
-        val output = BufferedOutputStream(FileOutputStream(file))
-        val input = BufferedInputStream(this@writeTo)
-        val buffer = ByteArray(bufferSize)
-        var read: Int
-        var size = 0L
-        while (input.read(buffer).also { read = it } != -1) {
-            size += read
-            output.write(buffer, 0, read)
-        }
-        output.flush()
-        output.close()
-        input.close()
-        size
+        output = FileOutputStream(file)
+        writeTo(output, bufferSize, onError)
+    } catch (e: Exception) {
+        onError(e)
+        -1L
+    } finally {
+        output?.closeQuietly()
     }
 }
 
-suspend fun InputStream.writeTo(uri: Uri, context: Context, bufferSize: Int = 8192): Long {
-    return withContext(Dispatchers.IO) {
-        val output = BufferedOutputStream(context.contentResolver.openOutputStream(uri))
-        val input = BufferedInputStream(this@writeTo)
-        val buffer = ByteArray(bufferSize)
-        var read: Int
-        var size = 0L
-        while (input.read(buffer).also { read = it } != -1) {
-            size += read
-            output.write(buffer, 0, read)
-        }
-        output.flush()
-        output.close()
-        input.close()
-        size
-    }
-}
-
-suspend fun InputStream.writeTo(out: OutputStream, bufferSize: Int = 8192): Long {
-    return withContext(Dispatchers.IO) {
-        val input = BufferedInputStream(this@writeTo)
-        val output = BufferedOutputStream(out)
-        val buffer = ByteArray(bufferSize)
-        var read: Int
-        var size = 0L
-        while (input.read(buffer).also { read = it } != -1) {
-            size += read
-            output.write(buffer, 0, read)
-        }
-        output.flush()
-        output.close()
-        input.close()
-        size
+/**
+ * Writes all bytes from this input stream to the content specified by [uri].
+ *
+ * @param uri The URI where the content will be written to.
+ * @param context The context used to resolve the URI.
+ * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
+ * @param onError Optional handler for errors that occur during copying.
+ *                Exceptions caught during the copy process will be passed to this handler.
+ *                Default behavior is to swallow exceptions silently.
+ * @return The total number of bytes copied or -1L if error occurred.
+ */
+fun InputStream.writeTo(
+    uri: Uri,
+    context: Context,
+    bufferSize: Int = 8192,
+    onError: (Exception) -> Unit = {},
+): Long {
+    var output: OutputStream? = null
+    return try {
+        output = context.contentResolver.openOutputStream(uri)
+            ?: throw IOException("Failed to open output stream")
+        writeTo(output, bufferSize, onError)
+    } catch (e: Exception) {
+        onError(e)
+        -1L
+    } finally {
+        output?.closeQuietly()
     }
 }
 
@@ -79,7 +116,7 @@ suspend fun InputStream.writeTo(out: OutputStream, bufferSize: Int = 8192): Long
  */
 fun InputStream.readBytes(
     bufferSize: Int = 8192,
-    consumer: (buffer: ByteArray, bytesRead: Int) -> Boolean
+    consumer: (buffer: ByteArray, bytesRead: Int) -> Boolean,
 ): Int {
     val buffer = ByteArray(bufferSize)
     var bytesRead: Int
