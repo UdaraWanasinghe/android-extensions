@@ -894,7 +894,6 @@ fun Uri.moveTo(
                             return false
                         }
                     }
-
                 } catch (e: Exception) {
                     onError(e)
                     return false
