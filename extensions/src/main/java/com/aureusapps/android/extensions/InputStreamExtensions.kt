@@ -16,15 +16,12 @@ import java.io.OutputStream
  *
  * @param out The output stream to write bytes to.
  * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
- * @param onError Optional handler for errors that occur during copying.
- *                Exceptions caught during the copy process will be passed to this handler.
- *                Default behavior is to swallow exceptions silently.
- * @return The total number of bytes copied or -1L if error occurred.
+ *
+ * @return The total number of bytes copied.
  */
 fun InputStream.writeTo(
     out: OutputStream,
     bufferSize: Int = 8192,
-    onError: (Exception) -> Unit = {},
 ): Long {
     var output: OutputStream? = null
     return try {
@@ -38,9 +35,6 @@ fun InputStream.writeTo(
             output.write(buffer, 0, read)
         }
         size
-    } catch (e: Exception) {
-        onError(e)
-        -1L
     } finally {
         output?.flush()
     }
@@ -51,24 +45,18 @@ fun InputStream.writeTo(
  *
  * @param path The path of the file to write bytes to.
  * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
- * @param onError Optional handler for errors that occur during copying.
- *                Exceptions caught during the copy process will be passed to this handler.
- *                Default behavior is to swallow exceptions silently.
- * @return The total number of bytes copied or -1L if error occurred.
+ *
+ * @return The total number of bytes copied.
  */
 fun InputStream.writeTo(
     path: String,
     bufferSize: Int = 8192,
-    onError: (Exception) -> Unit = {},
 ): Long {
     var output: OutputStream? = null
     return try {
         val file = File(path)
         output = FileOutputStream(file)
-        writeTo(output, bufferSize, onError)
-    } catch (e: Exception) {
-        onError(e)
-        -1L
+        writeTo(output, bufferSize)
     } finally {
         output?.closeQuietly()
     }
@@ -80,25 +68,19 @@ fun InputStream.writeTo(
  * @param uri The URI where the content will be written to.
  * @param context The context used to resolve the URI.
  * @param bufferSize The size of the buffer to use for copying (default is 8192 bytes).
- * @param onError Optional handler for errors that occur during copying.
- *                Exceptions caught during the copy process will be passed to this handler.
- *                Default behavior is to swallow exceptions silently.
- * @return The total number of bytes copied or -1L if error occurred.
+ *
+ * @return The total number of bytes copied.
  */
 fun InputStream.writeTo(
     uri: Uri,
     context: Context,
     bufferSize: Int = 8192,
-    onError: (Exception) -> Unit = {},
 ): Long {
     var output: OutputStream? = null
     return try {
         output = context.contentResolver.openOutputStream(uri)
             ?: throw IOException("Failed to open output stream")
-        writeTo(output, bufferSize, onError)
-    } catch (e: Exception) {
-        onError(e)
-        -1L
+        writeTo(output, bufferSize)
     } finally {
         output?.closeQuietly()
     }

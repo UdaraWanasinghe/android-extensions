@@ -6,8 +6,6 @@ import android.webkit.MimeTypeMap
 import androidx.core.net.toFile
 import com.aureusapps.android.providerfile.ProviderFile
 import java.io.File
-import java.io.FileInputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -63,7 +61,7 @@ fun ProviderFile.walkTopDown(action: (ProviderFile) -> Boolean): Boolean {
  * @return An InputStream to read from the ProviderFile, or null if an error occurs.
  */
 fun ProviderFile.openInputStream(context: Context): InputStream? {
-    return context.contentResolver.openInputStream(uri)
+    return uri.openInputStream(context)
 }
 
 /**
@@ -72,8 +70,8 @@ fun ProviderFile.openInputStream(context: Context): InputStream? {
  * @param context The context used to access the content resolver.
  * @return An OutputStream to write to the ProviderFile, or null if an error occurs.
  */
-fun ProviderFile.openOutputStream(context: Context): OutputStream? {
-    return context.contentResolver.openOutputStream(uri)
+fun ProviderFile.openOutputStream(context: Context, mode: String = "w"): OutputStream? {
+    return context.contentResolver.openOutputStream(uri, mode)
 }
 
 /**
@@ -166,6 +164,45 @@ fun ProviderFile.copyTo(
     }
 }
 
+/**
+ * Writes given provider file to the given target file.
+ *
+ * @param context The android context.
+ * @param targetFile The target file to which the provider file should be written.
+ * @param writeMode The write mode for the target file.
+ *
+ * @return The number of bytes written to the target file.
+ */
+fun ProviderFile.writeTo(
+    context: Context,
+    targetFile: ProviderFile,
+    writeMode: String = "w",
+): Long {
+    var input: InputStream? = null
+    var output: OutputStream? = null
+    try {
+        input = openInputStream(context)
+            ?: throw ProviderFileException(this, "Failed to open input stream")
+        output = targetFile.openOutputStream(context, writeMode)
+            ?: throw ProviderFileException(targetFile, "Failed to open output stream")
+        return input.writeTo(output)
+    } finally {
+        output?.flush()
+        output?.closeQuietly()
+        input?.closeQuietly()
+    }
+}
+
+/**
+ * Moves the current provider file to a target specified by [targetParent].
+ *
+ * @param context The android context.
+ * @param targetParent The target parent provider file to which the current provider file should be moved.
+ * @param overwrite Whether to overwrite the target provider file if it already exists.
+ * @param onError A lambda function that handles errors during the move operation.
+ *
+ * @return true if all files moved or moved with some skipped, or false if failed or terminated on error.
+ */
 fun ProviderFile.moveToParent(
     context: Context,
     targetParent: ProviderFile,
@@ -176,6 +213,7 @@ fun ProviderFile.moveToParent(
         return onError(ProviderFileException(this, "Source file does not exists")) != OnErrorAction.TERMINATE
     }
 
+    // if both provider files are RawProviderFiles, use file move operation
     val srcUri = uri
     if (srcUri.isFileUri) {
         val srcFile = srcUri.toFile()
@@ -191,121 +229,126 @@ fun ProviderFile.moveToParent(
     val isDirectory = isDirectory
     var targetFile = targetParent.findFile(fileName)
     if (targetFile == null) {
-        if (isDirectory) {
-            targetFile = targetParent.createDirectory(fileName)
-            if (targetFile == null) {
-                return onError(ProviderFileException(targetParent, "Failed to create directory in the provider file")) != OnErrorAction.TERMINATE
-            }
+        targetFile = if (isDirectory) {
+            createProviderDirectory(targetParent, fileName)
         } else {
-            val mimeType = fileName.substringAfterLast(".")
-            val displayName = fileName.substringBeforeLast(".")
-            targetFile = targetParent.createFile(mimeType, displayName)
-            if (targetFile == null) {
-                return onError(ProviderFileException(targetParent, "Failed to create file in the provider file")) != OnErrorAction.TERMINATE
+            createProviderFile(targetParent, fileName)
+        }
+    } else {
+        if (isDirectory) {
+            if (!targetFile.isDirectory) {
+                deleteProviderFile(targetFile, overwrite)
+                createProviderDirectory(targetParent, fileName)
             }
         }
     }
-    return moveTo(context, targetFile, overwrite, onError)
+
+    if (isDirectory) {
+        for (childFile in listFiles()) {
+            if (!moveToParent(context, targetFile, overwrite, onError)) {
+                return false
+            }
+        }
+        return true
+    } else {
+        return writeTo(context, targetFile, "wt") == length()
+    }
 }
 
 /**
- * Moves the current providerFile to a target specified by [dstProviderFile].
+ * Moves the current providerFile to a target specified by [targetFile].
  *
  * @param context The android context.
- * @param dstProviderFile The target provider file to which current provider file should be copied.
+ * @param targetFile The target provider file to which current provider file should be copied.
  * @param overwrite Whether to overwrite the target provider file if exists.
  * @param onError A lambda function that handles errors during the move operation.
  *                It takes an error message as input and returns a boolean indicating whether
  *                the operation should be continued (true) or terminated (false). Default is terminate.
+ *
  * @return true if the move operation was successful without skipping anything, false otherwise.
  */
 fun ProviderFile.moveTo(
     context: Context,
-    dstProviderFile: ProviderFile,
+    targetFile: ProviderFile,
     overwrite: Boolean = false,
     onError: (Exception) -> OnErrorAction,
 ): Boolean {
     if (!exists()) {
-        onError(ProviderFileException(this, "Source provider file does not exists"))
-        return false
+        return onError(ProviderFileException(this, "Source provider file does not exists")) != OnErrorAction.TERMINATE
     }
 
     val srcUri = uri
     if (srcUri.isFileUri) {
         val srcFile = srcUri.toFile()
-        var dstUri = dstProviderFile.uri
+        val dstUri = targetFile.uri
         if (dstUri.isFileUri) {
             val dstFile = dstUri.toFile()
             return srcFile.moveTo(dstFile, overwrite, onError)
+        }
+    }
+
+    val isDirectory = isDirectory
+    val targetIsDirectory = targetFile.isDirectory
+
+    val targetProviderFile: ProviderFile
+    if (isDirectory == targetIsDirectory) {
+        targetProviderFile = targetFile
+    } else {
+        val targetFileParent = targetFile.parent
+            ?: return onError(ProviderFileException(targetFile, "Destination provider file does not have a parent")) != OnErrorAction.TERMINATE
+        deleteProviderFile(targetFile, overwrite)
+        val fileName = name ?: return onError(ProviderFileException(this, "Couldn't retrieve document name")) != OnErrorAction.TERMINATE
+        targetProviderFile = if (isDirectory) {
+            createProviderDirectory(targetFileParent, fileName)
         } else {
-            // dst provider file is not a file
-            if (srcFile.isDirectory) {
-                if (dstProviderFile.isDirectory) {
-                    // now move children
-                    val childFiles = srcFile.listFiles()
-                    if (childFiles != null) {
-                        var success = true
-                        for (childFile in childFiles) {
-                            var resume = true
-                            srcFile.moveToParent(context, dstProviderFile, overwrite) { exception ->
-                                success = false
-                                onError(exception).also { resume = it }
-                            }
-                            if (!resume) {
-                                break
-                            }
-                        }
-                        return success
-                    }
-                } else {
-                    val parentProviderFile = dstProviderFile.parent
-                    if (parentProviderFile != null) {
-                        return srcFile.moveToParent(context, parentProviderFile, overwrite, onError)
-                    }
-                    onError(ProviderFileException(dstProviderFile, "Destination provider file exists"))
-                    return false
-                }
-            } else {
-                if (dstProviderFile.isDirectory) {
-                    // if destination provider file is a directory
-                    // try to find parent directory and delete the destination provider file
-                    // after deleting, create a new file inside the parent directory
-                    val parentProviderFile = dstProviderFile.parent
-                    val stillExists = parentProviderFile == null || !(overwrite && dstProviderFile.delete())
-                    if (stillExists) {
-                        onError(ProviderFileException(dstProviderFile, "Destination provider file already exists"))
-                        return false
-                    }
-                    // create file inside parent directory
-                    val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(srcFile.extension)
-                        ?: "application/octet-stream"
-                    val newDstProviderFile = parentProviderFile?.createFile(mimeType, srcFile.name)
-                    if (newDstProviderFile == null) {
-                        onError(ProviderFileException(parentProviderFile!!, "Failed to create file in the provider file"))
-                        return false
-                    }
-                    dstUri = newDstProviderFile.uri
-                }
-                var input: InputStream? = null
-                var output: OutputStream? = null
-                try {
-                    input = FileInputStream(srcFile)
-                    output = context.contentResolver.openOutputStream(dstUri, "wt")
-                        ?: throw IOException("Failed to open output stream")
-                    var success = true
-                    input.writeTo(output) { exception ->
-                        success = false
-                        onError(exception)
-                    }
-                    return success
-                } catch (e: Exception) {
-                    onError(e)
-                    return false
-                } finally {
-                    input?.closeQuietly()
-                    output?.closeQuietly()
-                }
+            createProviderFile(targetFileParent, fileName)
+        }
+    }
+
+    return if (isDirectory) {
+        for (childFile in listFiles()) {
+            if (!childFile.moveToParent(context, targetProviderFile, overwrite, onError)) {
+                return false
             }
         }
+        true
+    } else {
+        writeTo(context, targetProviderFile, "wt") == length()
+    }
+}
+
+/**
+ * Creates a provider directory in the given parent directory.
+ * Make sure the parent directory exists before calling this function.
+ * Make sure there is no directory with the same name in the parent directory.
+ */
+private fun createProviderDirectory(parentDir: ProviderFile, dirName: String): ProviderFile {
+    return parentDir.createDirectory(dirName)
+        ?: throw ProviderFileException(parentDir, "Failed to create directory in the provider file")
+}
+
+/**
+ * Creates a provider file in the given parent directory.
+ * Make sure the parent directory exists before calling this function.
+ * Make sure there is no file with the same name in the parent directory.
+ */
+private fun createProviderFile(parentDir: ProviderFile, fileName: String): ProviderFile {
+    val displayName = fileName.substringBeforeLast(".")
+    val extension = fileName.substringAfterLast(".")
+    val mimeType = MimeTypeMap.getSingleton()
+        .getMimeTypeFromExtension(extension)
+        ?: "application/octet-stream"
+    return parentDir.createFile(mimeType, displayName)
+        ?: throw ProviderFileException(parentDir, "Failed to create file in the provider file")
+}
+
+/**
+ * Deletes the given provider file.
+ * Call this if you sure provider [file] exists.
+ */
+private fun deleteProviderFile(file: ProviderFile, overwrite: Boolean) {
+    val stillExists = !(overwrite && file.delete())
+    if (stillExists) {
+        throw ProviderFileException(file, "Destination file already exists")
     }
 }

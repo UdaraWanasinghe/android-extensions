@@ -864,46 +864,13 @@ fun Uri.moveTo(
     context: Context,
     dstUri: Uri,
     overwrite: Boolean = false,
-    onError: (Exception) -> Boolean = { false },
+    onError: (Exception) -> OnErrorAction = { OnErrorAction.TERMINATE },
 ): Boolean {
-    try {
-        if (scheme == SCHEME_FILE) {
-            val srcFile = toFile()
-            if (dstUri.scheme == SCHEME_FILE) {
-                val dstFile = dstUri.toFile()
-                return srcFile.moveTo(dstFile, overwrite, onError)
-            } else {
-                try {
-                    val dstFile = ProviderFile.fromUri(context, dstUri)
-                    if (dstFile == null) {
-                        onError(UnsupportedUriException(dstUri))
-                        return false
-                    }
-                    if (srcFile.isDirectory) {
-                        if (dstFile.isDirectory) {
-                            for (file in srcFile.walkTopDown()) {
-                                if (file.isDirectory) {
-                                    val dstFile = dstFile.findFile(file.name)
-                                    if (dstFile != null && dstFile.isDirectory) {
-
-                                    }
-                                }
-                            }
-                        } else {
-                            onError(UnsupportedUriException(dstUri, "Expected directory uri"))
-                            return false
-                        }
-                    }
-                } catch (e: Exception) {
-                    onError(e)
-                    return false
-                }
-            }
-        }
-    } catch (e: Exception) {
-        onError(e)
-    }
-    return false
+    val srcFile = ProviderFile.fromUri(context, this)
+        ?: return onError(UnsupportedUriException(this)) != OnErrorAction.TERMINATE
+    val dstFile = ProviderFile.fromUri(context, dstUri)
+        ?: return onError(UnsupportedUriException(dstUri)) != OnErrorAction.TERMINATE
+    return srcFile.moveTo(context, dstFile, overwrite, onError)
 }
 
 /**

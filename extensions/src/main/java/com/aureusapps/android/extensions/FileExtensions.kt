@@ -2,56 +2,48 @@ package com.aureusapps.android.extensions
 
 import java.io.File
 
-data class FileException(
-    val file: File,
-    override val message: String = "File exception",
-) : Exception(message)
-
 /**
  * Moves this file to the specified destination file.
  *
+ * This method will first attempt to rename file to the target file. If the rename fails,
+ * it will copy file and delete the original file.
+ *
  * @param targetFile The destination file to move to.
  * @param overwrite Whether to overwrite the destination file or it's children if it already exists. Defaults to `false`.
- * @param onError A callback function to be invoked if an exception occurs during the move operation. Return true to continue operation or false to terminate it.
+ * @param onError A callback function to be invoked if an exception occurs during the move operation.
  *
  * @return `true` if the move operation was successful, `false` otherwise.
+ * @throws Exception if an exception occurs and not recoverable (not handled by the callback function).
  */
 fun File.moveTo(
     targetFile: File,
     overwrite: Boolean = false,
     onError: (Exception) -> OnErrorAction = { OnErrorAction.TERMINATE },
 ): Boolean {
-    // check source file
     if (!exists()) {
-        return onError(FileException(this, "Source file does not exists")) != OnErrorAction.TERMINATE
+        return onError(NoSuchFileException(this)) != OnErrorAction.TERMINATE
     }
 
     if (targetFile.exists()) {
         if (isDirectory) {
+            // if target is not a directory, delete it and create directory
             if (!targetFile.isDirectory) {
                 val stillExists = !(overwrite && targetFile.delete())
                 if (stillExists) {
-                    return onError(FileException(targetFile, "Target file exists")) != OnErrorAction.TERMINATE
+                    return onError(FileAlreadyExistsException(targetFile)) != OnErrorAction.TERMINATE
                 }
                 if (!targetFile.mkdirs()) {
-                    return onError(FileException(targetFile, "Failed to create target file")) != OnErrorAction.TERMINATE
+                    return onError(FileSystemException(targetFile, reason = "Failed to create directory")) != OnErrorAction.TERMINATE
                 }
             }
 
-            val childFiles = listFiles() ?: return true
+            // move children to the target directory
+            val childFiles = listFiles()!!
             var success = true
             for (childFile in childFiles) {
-                var skip = false
                 val targetChildFile = File(targetFile, childFile.name)
-                childFile.moveTo(targetChildFile, overwrite) { exception ->
-                    onError(exception).also {
-                        skip = it == OnErrorAction.SKIP
-                        if (success) {
-                            success = it != OnErrorAction.TERMINATE
-                        }
-                    }
-                }
-                if (skip) {
+                success = childFile.moveTo(targetChildFile, overwrite, onError)
+                if (!success) {
                     break
                 }
             }
@@ -59,7 +51,7 @@ fun File.moveTo(
         } else {
             val stillExists = !(overwrite && targetFile.delete())
             if (stillExists) {
-                return onError(FileException(targetFile, "Target file exists")) != OnErrorAction.TERMINATE
+                return onError(FileAlreadyExistsException(targetFile)) != OnErrorAction.TERMINATE
             }
             return moveTo(targetFile, true, onError)
         }
@@ -71,7 +63,5 @@ fun File.moveTo(
     }
 
     // copy and delete
-    return copyRecursively(targetFile, overwrite) { _, exception ->
-        onError(exception)
-    } && deleteRecursively()
+    return copyRecursively(targetFile, overwrite) { _, exception -> onError(exception) } && deleteRecursively()
 }
