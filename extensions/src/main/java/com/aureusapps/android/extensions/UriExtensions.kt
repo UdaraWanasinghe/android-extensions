@@ -505,6 +505,27 @@ fun Uri.getOrCreateDirectory(
 }
 
 /**
+ * Gets or creates a file with the specified name within the context of the given Uri.
+ *
+ * @param context The android context.
+ * @param fileName The name of the file to be accessed or created.
+ * @param overwrite If set to true and the file already exists, it will be overwritten.
+ *
+ * @return The Uri representing the accessed or created file, or null if an error occurred.
+ */
+fun Uri.getOrCreateFile(
+    context: Context,
+    fileName: String,
+    overwrite: Boolean = false,
+): Uri? {
+    val existing = findFile(context, fileName)
+    if (existing != null && !existing.isDirectory(context)) {
+        return existing
+    }
+    return createFile(context, fileName, overwrite)
+}
+
+/**
  * Checks if the resource referenced by the Uri exists.
  *
  * @param context The context used for accessing resources and content resolver.
