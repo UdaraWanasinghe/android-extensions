@@ -1,7 +1,6 @@
 package com.aureusapps.android.extensions
 
 import android.content.Context
-import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.aureusapps.android.extensions.utils.TestHelpers
@@ -9,16 +8,15 @@ import com.aureusapps.android.extensions.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.utils.TestHelpers.FileNode
 import com.aureusapps.android.providerfile.ProviderFile
 import org.junit.Assert
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
-import java.nio.file.Files
 import java.util.UUID
 
 @RunWith(AndroidJUnit4::class)
 class ProviderFileExtensionsInstrumentedTest {
-
     private val context = ApplicationProvider.getApplicationContext<Context>()
 
     @Test
@@ -75,9 +73,9 @@ class ProviderFileExtensionsInstrumentedTest {
 
     @Test
     fun test_copyTo() {
-        val targetParent = createTempDirectory()
+        val targetParent = TestHelpers.createTempDirectory()
         targetParent.mkdirs()
-        val files = generateTempFiles(targetParent)
+        val files = TestHelpers.generateTempFiles(targetParent)
         try {
             val srcDocumentFile = ProviderFile.fromFile(files.first().first)
             val targetDocumentFile = ProviderFile.fromFile(targetParent)
@@ -94,48 +92,25 @@ class ProviderFileExtensionsInstrumentedTest {
         }
     }
 
-    private fun createTempDirectory(): File {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Files.createTempDirectory("tmp").toFile()
-        } else {
-            createTempDir("tmp")
+    @Test
+    fun test_moveTo() {
+        val targetFile = TestHelpers.createTempDirectory()
+        targetFile.mkdirs()
+        val filePairs = TestHelpers.generateTempFiles(targetFile)
+        try {
+            val srcProviderFile = ProviderFile.fromFile(filePairs.first().first)
+            val dstProviderFile = ProviderFile.fromFile(filePairs.first().second)
+            val moved = srcProviderFile.moveTo(context, dstProviderFile, true)
+            assertTrue(moved)
+            for (filePair in filePairs) {
+                val (srcFile, dstFile) = filePair
+                assertFalse("Source file exists: ${srcFile.absolutePath}", srcFile.exists())
+                assertTrue("Destination file does not exists: ${dstFile.absolutePath}", dstFile.exists())
+            }
+        } finally {
+            targetFile.deleteRecursively()
+            val (root, _) = filePairs.first()
+            root.deleteRecursively()
         }
     }
-
-
-    private fun generateTempFiles(targetParent: File): List<Pair<File, File>> {
-        val root = createTempDirectory()
-        TestHelpers.generateFiles(
-            root,
-            listOf(
-                FileNode("file1"),
-                FileNode("text1.txt"),
-                FileNode("zip1.tar.gz"),
-                DirectoryNode(
-                    "dir1",
-                    listOf(
-                        FileNode("text2.txt")
-                    )
-                )
-            )
-        )
-        val file1 = File(root, "file1")
-        file1.writeText("file1")
-        val text1 = File(root, "text1")
-        text1.writeText("text1")
-        val zip1 = File(root, "zip1.tar.gz")
-        zip1.writeText("zip1")
-        val dir1 = File(root, "dir1")
-        val text2 = File(dir1, "text2.txt")
-        val targetDir = File(targetParent, root.name)
-        return listOf(
-            root to targetDir,
-            file1 to File(targetDir, "file1"),
-            text1 to File(targetDir, "text1.txt"),
-            zip1 to File(targetDir, "zip1.tar.gz"),
-            dir1 to File(targetDir, "dir1"),
-            text2 to File(targetDir, "dir1/text2.txt")
-        )
-    }
-
 }

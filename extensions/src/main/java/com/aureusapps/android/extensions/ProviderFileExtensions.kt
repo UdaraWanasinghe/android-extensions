@@ -245,7 +245,7 @@ fun ProviderFile.moveToParent(
 
     if (isDirectory) {
         for (childFile in listFiles()) {
-            if (!moveToParent(context, targetFile, overwrite, onError)) {
+            if (!childFile.moveToParent(context, targetFile, overwrite, onError)) {
                 return false
             }
         }
@@ -271,7 +271,7 @@ fun ProviderFile.moveTo(
     context: Context,
     targetFile: ProviderFile,
     overwrite: Boolean = false,
-    onError: (Exception) -> OnErrorAction,
+    onError: (Exception) -> OnErrorAction = { OnErrorAction.TERMINATE },
 ): Boolean {
     if (!exists()) {
         return onError(ProviderFileException(this, "Source provider file does not exists")) != OnErrorAction.TERMINATE
@@ -311,9 +311,9 @@ fun ProviderFile.moveTo(
                 return false
             }
         }
-        true
+        delete()
     } else {
-        writeTo(context, targetProviderFile, "wt") == length()
+        writeTo(context, targetProviderFile, "wt") == length() && delete()
     }
 }
 

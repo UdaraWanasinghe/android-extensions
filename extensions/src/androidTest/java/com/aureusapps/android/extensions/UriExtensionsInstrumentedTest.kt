@@ -15,6 +15,7 @@ import com.aureusapps.android.extensions.test.SelectTestDirectoryActivity
 import com.aureusapps.android.extensions.utils.TestHelpers
 import com.aureusapps.android.extensions.utils.TestHelpers.DirectoryNode
 import com.aureusapps.android.extensions.utils.TestHelpers.FileNode
+import com.aureusapps.android.providerfile.ProviderFile
 import kotlinx.coroutines.test.runTest
 import okhttp3.mockwebserver.Dispatcher
 import okhttp3.mockwebserver.MockResponse
@@ -31,7 +32,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.File
 import java.nio.file.Files
-import java.util.UUID
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -64,7 +64,7 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun getFileName_contentProviderUri() {
-        val expectedName = genRandomName(extension = "txt")
+        val expectedName = TestHelpers.genRandomName("txt")
         val textFileUri = createContentProviderFile(fileName = expectedName)
         try {
             val actualName = textFileUri.fileName(context)
@@ -161,7 +161,7 @@ class UriExtensionsInstrumentedTest {
         val parentUri = testDocumentRoot
         var childUri: Uri? = null
         try {
-            val fileName = genRandomName(extension = "txt")
+            val fileName = TestHelpers.genRandomName("txt")
             childUri = createContentProviderFile(fileName = fileName)
             val actualUris = parentUri.listFiles(context)
                 ?: throw AssertionError("File list is null.")
@@ -203,7 +203,7 @@ class UriExtensionsInstrumentedTest {
     fun createFile_contentProviderUri() {
         val parentUri = testDocumentRoot
         var childUri: Uri? = null
-        val fileName = genRandomName(extension = "txt")
+        val fileName = TestHelpers.genRandomName("txt")
         try {
             var error: String? = null
             childUri = parentUri.createFile(context, fileName) {
@@ -261,7 +261,7 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun checkExists_contentUri() {
-        val fileName = genRandomName(extension = "txt")
+        val fileName = TestHelpers.genRandomName("txt")
         val childUri = createContentProviderFile(fileName = fileName)
         try {
             // check tree uri
@@ -328,7 +328,7 @@ class UriExtensionsInstrumentedTest {
     @Test
     fun findFile_contentProviderUri() {
         val parentUri = testDocumentRoot
-        val fileName = genRandomName(extension = "txt")
+        val fileName = TestHelpers.genRandomName("txt")
         val childUri = createContentProviderFile(fileName = fileName)
         try {
             val foundUri = parentUri.findFile(context, fileName)
@@ -357,7 +357,7 @@ class UriExtensionsInstrumentedTest {
 
     @Test
     fun copyUri_contentProviderUri() {
-        val srcName = genRandomName(extension = "txt")
+        val srcName = TestHelpers.genRandomName("txt")
         val srcUri = createContentProviderFile(fileName = srcName)
         val targetParentFile = createExternalStorageDirectory()
         val targetParentUri = targetParentFile.toUri()
@@ -488,13 +488,62 @@ class UriExtensionsInstrumentedTest {
         }
     }
 
-    @Suppress("SameParameterValue")
-    private fun genRandomName(extension: String?): String {
-        return UUID.randomUUID().toString().let {
-            if (extension != null) {
-                "$it.$extension"
-            } else {
-                it
+    @Test
+    fun test_writeTo_fileUri() {
+        val targetParent = TestHelpers.createTempDirectory()
+        val filePairs = TestHelpers.generateTempFiles(targetParent)
+        try {
+            val srcUri = filePairs.first().first.toUri()
+            val dstUri = filePairs.first().second.toUri()
+            val moved = srcUri.moveTo(context, dstUri, true)
+            assertTrue(moved)
+            for ((srcFile, dstFile) in filePairs) {
+                assertFalse("Source file exists: ${srcFile.absolutePath}", srcFile.exists())
+                assertTrue("Destination file does not exists: ${dstFile.absolutePath}", dstFile.exists())
+            }
+        } finally {
+            targetParent.deleteRecursively()
+            val (root, _) = filePairs.first()
+            root.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun test_writeTo_contentProviderUri() = runTest {
+        val rootProviderDir = ProviderFile.fromUri(context, testDocumentRoot)!!
+        try {
+            val srcProviderDir = rootProviderDir.createDirectory(TestHelpers.genRandomName())!!
+            TestHelpers.addFilesToProviderFile(
+                context,
+                srcProviderDir,
+                listOf(
+                    FileNode("1.txt", "Sample text"),
+                    DirectoryNode(
+                        "2",
+                        listOf(
+                            FileNode("3.txt", "Sample text"),
+                            DirectoryNode(
+                                "4",
+                                listOf(
+                                    FileNode("5.txt", "Sample text"),
+                                    FileNode("6.txt", "Sample text"),
+                                ),
+                            ),
+                        ),
+                    ),
+                    FileNode("7.txt", "Sample text"),
+                ),
+            )
+            val dstProviderDir = rootProviderDir.createDirectory(TestHelpers.genRandomName())!!
+            val moved = srcProviderDir.moveTo(context, dstProviderDir, true)
+            assertTrue(moved)
+            assertTrue(dstProviderDir.exists())
+        } finally {
+            rootProviderDir.listFiles().forEach { file ->
+                try {
+                    file.delete()
+                } catch (_: Exception) {
+                }
             }
         }
     }
@@ -523,7 +572,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     private fun createContentProviderFile(
-        fileName: String = genRandomName(extension = "txt"),
+        fileName: String = TestHelpers.genRandomName("txt"),
         text: String = "Sample text",
     ): Uri {
         val textFileUri = DocumentsContract.createDocument(
@@ -603,7 +652,6 @@ class UriExtensionsInstrumentedTest {
     }
 
     companion object {
-
         const val PREFERENCES_NAME = "URI_TEST"
         const val TEST_DIR_KEY = "TEST_DIR_KEY"
 
@@ -632,7 +680,5 @@ class UriExtensionsInstrumentedTest {
                 }
             }
         }
-
     }
-
 }
