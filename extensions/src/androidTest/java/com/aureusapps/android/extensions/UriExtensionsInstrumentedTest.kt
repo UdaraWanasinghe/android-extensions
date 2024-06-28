@@ -50,7 +50,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun getFileName_fileUri() {
+    fun test_getFileName_fileUri() {
         val textFile = createExternalStorageFile()
         val expectedName = textFile.name
         try {
@@ -63,7 +63,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun getFileName_contentProviderUri() {
+    fun test_getFileName_contentProviderUri() {
         val expectedName = TestHelpers.genRandomName("txt")
         val textFileUri = createContentProviderFile(fileName = expectedName)
         try {
@@ -75,7 +75,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun getFileName_androidResourceUri() {
+    fun test_getFileName_androidResourceUri() {
         val expectedName = "sample_text"
         val resourceUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
         val actualName = resourceUri.fileName(context)
@@ -83,7 +83,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun getFileName_httpUri() {
+    fun test_getFileName_httpUri() {
         val expectedName = "hosted_text.txt"
         // pattern 1
         val httpUri1 = Uri.parse("http://localhost:4648/$expectedName")
@@ -96,7 +96,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkIsDirectory_fileUri() {
+    fun test_checkIsDirectory_fileUri() {
         val rootDir = createExternalStorageDirectory()
         TestHelpers.generateFiles(
             rootDir,
@@ -119,14 +119,14 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkIsDirectory_contentProviderUri() {
+    fun test_checkIsDirectory_contentProviderUri() {
         val rootUri = testDocumentRoot
         val isDirectory = rootUri.isDirectory(context)
         assertTrue(isDirectory)
     }
 
     @Test
-    fun getFileList_fileUri() {
+    fun test_getFileList_fileUri() {
         val root = createExternalStorageDirectory()
         TestHelpers.generateFiles(
             root,
@@ -157,7 +157,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun getFileList_contentProviderUri() {
+    fun test_getFileList_contentProviderUri() {
         val parentUri = testDocumentRoot
         var childUri: Uri? = null
         try {
@@ -174,7 +174,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkIsEmpty_fileUri() {
+    fun test_checkIsEmpty_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
             File(tmpDir, "file1.txt").createNewFile()
@@ -186,7 +186,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun createFile_fileUri() {
+    fun test_createFile_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
             val fileName = "new_file.txt"
@@ -200,7 +200,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun createFile_contentProviderUri() {
+    fun test_createFile_contentProviderUri() {
         val parentUri = testDocumentRoot
         var childUri: Uri? = null
         val fileName = TestHelpers.genRandomName("txt")
@@ -217,7 +217,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun createDirectory_fileUri() {
+    fun test_createDirectory_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
             val dirName = "new_dir"
@@ -231,7 +231,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun createDirectory_contentProviderUri() {
+    fun test_createDirectory_contentProviderUri() {
         val tmpDir = testDocumentRoot
         var dirUri: Uri? = null
         try {
@@ -248,7 +248,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkExists_fileUri() {
+    fun test_checkExists_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
             val dirUri = tmpDir.toUri()
@@ -260,7 +260,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkExists_contentUri() {
+    fun test_checkExists_contentUri() {
         val fileName = TestHelpers.genRandomName("txt")
         val childUri = createContentProviderFile(fileName = fileName)
         try {
@@ -298,7 +298,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun checkExists_httpUri() {
+    fun test_checkExists_httpUri() {
         val server = hostFileContent()
         try {
             val contentUrl = server.url("hosted_text.txt").toString()
@@ -311,7 +311,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun findFile_fileUri() {
+    fun test_findFile_fileUri() {
         val tmpDir = createExternalStorageDirectory()
         try {
             val fileName = "tmp.txt"
@@ -326,7 +326,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun findFile_contentProviderUri() {
+    fun test_findFile_contentProviderUri() {
         val parentUri = testDocumentRoot
         val fileName = TestHelpers.genRandomName("txt")
         val childUri = createContentProviderFile(fileName = fileName)
@@ -339,7 +339,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun copyUri_fileUri() {
+    fun test_copyUri_fileUri() {
         val srcFile = createExternalStorageFile()
         val srcUri = Uri.fromFile(srcFile)
         val targetParentFile = createExternalStorageDirectory()
@@ -356,7 +356,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun copyUri_contentProviderUri() {
+    fun test_copyUri_contentProviderUri() {
         val srcName = TestHelpers.genRandomName("txt")
         val srcUri = createContentProviderFile(fileName = srcName)
         val targetParentFile = createExternalStorageDirectory()
@@ -373,7 +373,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun copyUri_androidResourceUri() {
+    fun test_copyUri_androidResourceUri() {
         val srcUri = TestHelpers.getAndroidResourceUri(context, R.raw.sample_text)
         val targetParentFile = createExternalStorageDirectory()
         val targetParentUri = targetParentFile.toUri()
@@ -388,7 +388,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun copyUri_httpUri() {
+    fun test_copyUri_httpUri() {
         val server = hostFileContent()
         val fileName = "hosted_text.txt"
         val contentUrl = server.url(fileName).toString()
@@ -407,7 +407,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun delete_fileUri() {
+    fun test_delete_fileUri() {
         val rootDir = createExternalStorageDirectory()
         TestHelpers.generateFiles(
             rootDir,
@@ -441,7 +441,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun readBytes_fileUri() {
+    fun test_readBytes_fileUri() {
         val textFile = createExternalStorageFile()
         try {
             val textFileUri = textFile.toUri()
@@ -458,7 +458,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun writeBytes_fileUri() {
+    fun test_writeBytes_fileUri() {
         val tempFile = File.createTempFile("text", null)
         val sampleText = "Sample"
         val written = tempFile
@@ -471,7 +471,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun readToBuffer_fileUri() {
+    fun test_readToBuffer_fileUri() {
         val textFile = createExternalStorageFile()
         try {
             val buffer = textFile.toUri().readToBuffer(context)
@@ -509,7 +509,7 @@ class UriExtensionsInstrumentedTest {
     }
 
     @Test
-    fun test_writeTo_contentProviderUri() = runTest {
+    fun test_writeTo_contentProviderUri() {
         val rootProviderDir = ProviderFile.fromUri(context, testDocumentRoot)!!
         try {
             val srcProviderDir = rootProviderDir.createDirectory(TestHelpers.genRandomName())!!
