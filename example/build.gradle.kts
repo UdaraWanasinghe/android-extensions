@@ -20,7 +20,7 @@ val props = Props(project)
 
 android {
     namespace = "${props.groupId}.extensions.example"
-    compileSdk = 34
+    compileSdk = 35
     defaultConfig {
         applicationId = "${props.groupId}.extensions.example"
         minSdk = 21
