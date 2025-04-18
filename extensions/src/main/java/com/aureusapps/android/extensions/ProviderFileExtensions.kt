@@ -45,7 +45,7 @@ fun ProviderFile.walkBottomUp(action: (ProviderFile) -> Boolean): Boolean {
 fun ProviderFile.walkTopDown(action: (ProviderFile) -> Boolean): Boolean {
     val files = mutableListOf(this)
     while (files.isNotEmpty()) {
-        val file = files.removeFirst()
+        val file = files.removeAt(0)
         if (!action(file)) return false
         if (file.isDirectory) {
             files.addAll(file.listFiles())
